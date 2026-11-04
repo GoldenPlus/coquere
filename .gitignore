@@ -3,5 +3,6 @@ node_modules/
 
 # Tablero Kanvas y configuración de agentes: solo en local
 kanvas.json
+AGENTS.md
 .agents/
 .claude/
