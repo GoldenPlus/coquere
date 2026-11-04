@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#4d6b2f">
+  <title>Coquere</title>
+  <link rel="icon" href="icono.svg" type="image/svg+xml">
+  <!-- versiones: generado por npm run versionar -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-0zTVew5p4SLcXjZBrsiMTL+1MlR3FJ29+6A8KZoaZsE='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=acc167141d">
+  <script type="importmap">
+  { "imports": {
+      "./js/almacen.js": "./js/almacen.js?v=db73d54f84",
+      "./js/config.js": "./js/config.js?v=640e00eb72",
+      "./js/dom.js": "./js/dom.js?v=749c587cc2",
+      "./js/estado.js": "./js/estado.js?v=941b583a8f",
+      "./js/github.js": "./js/github.js?v=e2692930d9",
+      "./js/main.js": "./js/main.js?v=a31258d944",
+      "./js/texto.js": "./js/texto.js?v=847e5e4645"
+  } }
+  </script>
+  <script type="module" src="js/main.js?v=a31258d944"></script>
+  <!-- /versiones -->
+</head>
+<body>
+  <header class="cabecera">
+    <div class="fila">
+      <h1>Coquere</h1>
+      <button id="btn-recargar" class="icono" type="button" title="Recargar" aria-label="Recargar">⟳</button>
+      <button id="btn-ajustes" class="icono" type="button" title="Ajustes" aria-label="Ajustes">⚙</button>
+    </div>
+  </header>
+
+  <main>
+    <p id="estado" class="estado" role="status"></p>
+    <section id="conexion" class="tarjeta-conexion" hidden>
+      <p class="conectado">● Conectado</p>
+      <dl>
+        <dt>Repositorio</dt><dd id="conexion-repo"></dd>
+        <dt>En este dispositivo</dt><dd id="conexion-nombre"></dd>
+        <dt>Recetas</dt><dd id="conexion-recetas"></dd>
+        <dt>Actualizado</dt><dd id="conexion-fecha"></dd>
+      </dl>
+      <p class="ayuda">Aquí aparecerá el recetario.</p>
+    </section>
+  </main>
+
+  <div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+
+  <!-- Ajustes -->
+  <dialog id="dlg-ajustes">
+    <form id="form-ajustes" class="formulario">
+      <h2>Ajustes</h2>
+      <p class="ayuda">Se guardan solo en este dispositivo. Usa un token propio para cada dispositivo: si pierdes uno, revocas solo ese.</p>
+      <label>Tu nombre
+        <input name="nombre" required autocomplete="given-name">
+      </label>
+      <label>Repositorio de datos
+        <input name="repo" required placeholder="usuario/coquere-datos" autocapitalize="off" spellcheck="false">
+      </label>
+      <label>Token de GitHub
+        <input name="token" type="password" required autocomplete="off" spellcheck="false">
+      </label>
+      <p id="ajustes-error" class="error" role="alert"></p>
+      <div class="botones">
+        <button id="ajustes-olvidar" type="button" class="peligro">Olvidar este dispositivo</button>
+        <span class="hueco"></span>
+        <button id="ajustes-cancelar" type="button" class="secundario">Cancelar</button>
+        <button id="ajustes-guardar" type="submit">Guardar y conectar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

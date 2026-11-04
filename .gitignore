@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+
+# Tablero Kanvas y configuración de agentes: solo en local
+kanvas.json
+.agents/
+.claude/
