@@ -257,3 +257,15 @@ label.boton {
   border: 1px solid var(--borde); background: transparent; color: var(--texto);
 }
 label.boton:focus-within { outline: 2px solid var(--acento); }
+
+/* Búsqueda y filtros */
+.buscador { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.buscador input { flex: 1; min-width: 0; }
+.buscador button { flex: none; padding-inline: 0.9em; }
+.buscador button.activo { border-color: var(--acento); color: var(--acento); font-weight: 600; }
+.panel-filtros { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 0.5rem 0.75rem 0.75rem; margin-top: 0.5rem; display: grid; gap: 0.6rem; }
+.grupo-filtro h3 { font-size: 0.8rem; font-weight: 600; color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; margin: 0.25rem 0 0.35rem; }
+.fichas { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.ficha-filtro { background: transparent; color: var(--texto); border: 1px solid var(--borde); padding: 0.35em 0.85em; font-size: 0.9rem; }
+.ficha-filtro.activa { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); }
+button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(--acento); text-decoration: underline; font-size: inherit; }

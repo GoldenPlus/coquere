@@ -8,8 +8,8 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-30Oh5hwdVEJ6c4vSPQj/dhrt0Ivr35fxjvamLM3Wh5Q='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=1e685968b3">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-4dB1rVMMiO27DfnkR61mfs/v0P/Jt0uODRUat0ZPuCQ='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=46fa75f570">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=db73d54f84",
@@ -17,17 +17,18 @@
       "./js/dom.js": "./js/dom.js?v=749c587cc2",
       "./js/estado.js": "./js/estado.js?v=941b583a8f",
       "./js/ficha.js": "./js/ficha.js?v=3172f08697",
+      "./js/filtros.js": "./js/filtros.js?v=6bd4f94801",
       "./js/formulario-receta.js": "./js/formulario-receta.js?v=87a2508610",
       "./js/fotos.js": "./js/fotos.js?v=a3917a6171",
       "./js/github.js": "./js/github.js?v=e2692930d9",
       "./js/listado.js": "./js/listado.js?v=f991ec5e74",
-      "./js/main.js": "./js/main.js?v=a242d53d2d",
+      "./js/main.js": "./js/main.js?v=0536b5110f",
       "./js/receta.js": "./js/receta.js?v=cf59f461bd",
       "./js/recetas.js": "./js/recetas.js?v=89fc9e0555",
       "./js/texto.js": "./js/texto.js?v=847e5e4645"
   } }
   </script>
-  <script type="module" src="js/main.js?v=a242d53d2d"></script>
+  <script type="module" src="js/main.js?v=0536b5110f"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -42,7 +43,12 @@
   <main>
     <p id="estado" class="estado" role="status"></p>
     <section id="recetario" hidden>
-      <p class="resumen"><span id="resumen-recetas"></span> · <span id="resumen-fecha"></span></p>
+      <div class="buscador">
+        <input id="buscar" type="search" placeholder="Buscar por título o ingrediente" aria-label="Buscar recetas" autocomplete="off" enterkeyhint="search">
+        <button id="btn-filtros" type="button" class="secundario" aria-expanded="false" aria-controls="filtros">Filtros</button>
+      </div>
+      <div id="filtros" class="panel-filtros" hidden></div>
+      <p class="resumen"><span id="resumen-recetas"></span> · <span id="resumen-fecha"></span><button id="quitar-filtros" type="button" class="enlace" hidden>Quitar filtros</button></p>
       <div id="listado"></div>
     </section>
     <section id="vista-ficha" hidden>

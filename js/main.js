@@ -9,6 +9,7 @@ import { $, el, aviso, fechaLegible, ocupado } from './dom.js';
 import { abrirNuevaReceta, abrirEditarReceta, prepararFormularioReceta } from './formulario-receta.js';
 import { borrarReceta, puntuarReceta, anadirNota } from './recetas.js';
 import { mostrarFoto } from './fotos.js';
+import { filtrosVacios, filtrosActivos, filtrarRecetas, construirPanel } from './filtros.js';
 import { pintarListado } from './listado.js';
 import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './ficha.js';
 
@@ -25,6 +26,8 @@ function idEnDireccion() {
 }
 
 let scrollListado = 0;
+/** Búsqueda y filtros del listado: duran mientras la app está abierta (también al ir y volver de una ficha). */
+let filtros = filtrosVacios();
 const verFoto = (img, ruta) => mostrarFoto(img, app.cliente, ruta);
 
 function render() {
@@ -39,9 +42,39 @@ function render() {
   if (!hayDatos) return;
   const recetas = app.almacen.items('recetas');
   if (enFicha) return pintarFicha(recetas.find((r) => r.id === id));
-  $('#resumen-recetas').textContent = recetas.length === 1 ? '1 receta' : `${recetas.length} recetas`;
+  const visibles = filtrarRecetas(recetas, filtros);
+  const filtrando = visibles.length !== recetas.length || filtros.texto.trim() !== '' || filtrosActivos(filtros) > 0;
+  const total = recetas.length === 1 ? '1 receta' : `${recetas.length} recetas`;
+  $('#resumen-recetas').textContent = filtrando ? `${visibles.length} de ${total}` : total;
   $('#resumen-fecha').textContent = `actualizado ${fechaLegible(app.almacen.fecha)}`;
-  pintarListado($('#listado'), recetas, verFoto);
+  $('#quitar-filtros').hidden = !filtrando;
+  const n = filtrosActivos(filtros);
+  $('#btn-filtros').textContent = n ? `Filtros (${n})` : 'Filtros';
+  $('#btn-filtros').classList.toggle('activo', n > 0);
+  if (!$('#filtros').hidden) $('#filtros').replaceChildren(...construirPanel(recetas, filtros, cambiarFiltros).filter(Boolean));
+  if (recetas.length && !visibles.length) {
+    $('#listado').replaceChildren(el('p', { class: 'vacio' }, 'Ninguna receta cumple la búsqueda y los filtros.'));
+  } else {
+    pintarListado($('#listado'), visibles, verFoto);
+  }
+}
+
+function cambiarFiltros(nuevos) {
+  filtros = nuevos;
+  render();
+}
+
+function alternarPanelFiltros() {
+  const panel = $('#filtros');
+  panel.hidden = !panel.hidden;
+  $('#btn-filtros').setAttribute('aria-expanded', String(!panel.hidden));
+  render();
+}
+
+function quitarFiltros() {
+  filtros = filtrosVacios();
+  $('#buscar').value = '';
+  render();
 }
 
 let fichaPintada = null;
@@ -227,6 +260,9 @@ function iniciar() {
 
   window.addEventListener('hashchange', cambioDeVista);
   $('#ficha-volver').addEventListener('click', volver);
+  $('#buscar').addEventListener('input', (e) => cambiarFiltros({ ...filtros, texto: e.target.value }));
+  $('#btn-filtros').addEventListener('click', alternarPanelFiltros);
+  $('#quitar-filtros').addEventListener('click', quitarFiltros);
   $('#ficha-editar').addEventListener('click', () => fichaActual && abrirEditarReceta(fichaActual));
   $('#ficha-borrar').addEventListener('click', borrarFicha);
   // Marca las entradas abiertas desde la lista, para que «← Recetas» equivalga al botón atrás.
