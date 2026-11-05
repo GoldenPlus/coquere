@@ -293,7 +293,7 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 .dia.pasado { opacity: 0.7; }
 .dia h3 { margin: 0 0 0.3rem; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
 .marca-hoy { font-size: 0.75rem; text-transform: none; background: var(--acento); color: var(--acento-texto); border-radius: 999px; padding: 0.05em 0.6em; }
-.hueco { display: grid; grid-template-columns: 4rem minmax(0, 1fr); align-items: center; gap: 0.1rem 0.5rem; padding: 0.35rem 0; border-top: 1px dashed var(--borde); }
+.dia .hueco { display: grid; grid-template-columns: 4rem minmax(0, 1fr); align-items: center; gap: 0.1rem 0.5rem; padding: 0.35rem 0; border-top: 1px dashed var(--borde); }
 .hueco-nombre { color: var(--suave); font-size: 0.85rem; grid-row: span 2; align-self: start; padding-top: 0.15rem; }
 .hueco.libre .hueco-nombre { grid-row: auto; padding-top: 0; }
 .hueco .elegir { justify-self: start; padding: 0.3em 0.9em; font-size: 0.9rem; }
@@ -310,3 +310,13 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 .opciones-receta { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
 .opcion-receta { width: 100%; text-align: left; background: var(--fondo); color: var(--texto); border: 1px solid var(--borde); border-radius: 8px; padding: 0.6rem 0.8rem; display: grid; gap: 0.1rem; }
 .opcion-receta .titulo { font-weight: 600; }
+
+/* Raciones en la ficha */
+.ficha-datos > .datos-raciones { background: var(--superficie); border: 1px solid var(--borde); border-radius: 8px; padding: 0.35rem 0.5rem 0.35rem 0.8rem; }
+.ficha-datos > .datos-raciones.cambiado { border-color: var(--acento); }
+.paso-raciones { display: flex; align-items: center; gap: 0.3rem; }
+.paso-raciones dd { margin: 0; font-weight: 600; min-width: 1.6rem; text-align: center; }
+.paso-raciones .icono { font-size: 1.2rem; padding: 0 0.45em; border: 1px solid var(--borde); border-radius: 999px; line-height: 1.5; }
+.aviso-raciones { margin: 0 0 0.5rem; padding: 0.4rem 0.7rem; border-radius: 8px; background: var(--superficie); border-left: 3px solid var(--acento); font-size: 0.95rem; }
+.aviso-raciones .enlace { padding: 0; }
+.redondeo { color: var(--suave); font-size: 0.85rem; }

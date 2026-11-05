@@ -20,6 +20,7 @@ npm run versionar  # tras cambiar CSS o JS: actualiza marcas de versión y CSP e
 | `js/menus.js`, `js/vista-menu.js` | Menú semanal (`menus.json`) y ajustes de la familia (`ajustes.json`) |
 | `js/ingredientes.js` | Mismo ingrediente escrito de otra forma (`claveIngrediente`) y sugerencias de nombres |
 | `js/fotos.js` | Fotos: reducir en el dispositivo, subir a `fotos/` del repo privado, ver con caché |
+| `js/escalado.js` | Escalar cantidades a otras raciones con redondeos de cocina |
 | `js/ficha.js` | Ficha de receta (`#receta/<id>`) y pantalla encendida mientras se cocina |
 | `js/github.js` | Contents API: leer con `sha`, escribir y reintentar ante conflicto, archivos |
 | `js/recetas.js`, `js/formulario-receta.js` | Alta de recetas en `recetas.json` y su formulario |

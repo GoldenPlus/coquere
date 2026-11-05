@@ -3,6 +3,7 @@
 import { UNIDADES } from './receta.js';
 import { NOMBRES_DIFICULTAD, formatearTiempo, estrellas } from './listado.js';
 import { el, fechaLegible } from './dom.js';
+import { escalarReceta } from './escalado.js';
 
 const FRACCIONES = { 0.25: '¼', 0.5: '½', 0.75: '¾', [1 / 3]: '⅓', [2 / 3]: '⅔', 0.125: '⅛' };
 
@@ -96,8 +97,11 @@ export function construirFicha(r, { onPuntuar, onNota, verFoto } = {}) {
     foto = el('img', { class: 'ficha-foto', alt: `Foto: ${r.titulo}` });
     verFoto(foto, r.foto);
   }
+  const ingredientes = el('div', {});
+  const aviso = el('p', { class: 'aviso-raciones', hidden: true });
+  const raciones = selectorRaciones(r, (n) => pintarIngredientes(ingredientes, aviso, r, n));
+  pintarIngredientes(ingredientes, aviso, r, r.raciones);
   const datos = [
-    ['Raciones', String(r.raciones)],
     ['Tiempo', formatearTiempo(r.tiempo)],
     ['Dificultad', NOMBRES_DIFICULTAD[r.dificultad] ?? ''],
   ].filter(([, v]) => v);
@@ -112,16 +116,8 @@ export function construirFicha(r, { onPuntuar, onNota, verFoto } = {}) {
       ? puntuador(r, onPuntuar)
       : r.puntuacion && el('p', { class: 'estrellas grande', 'aria-label': `Puntuación: ${r.puntuacion} de 5` }, estrellas(r.puntuacion)),
     chips.length > 0 && el('ul', { class: 'chips' }, chips.map(([tipo, t]) => el('li', { class: tipo }, t))),
-    datos.length > 0 && el('dl', { class: 'ficha-datos' }, datos.map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v)))),
-    seccion(
-      'Ingredientes',
-      r.ingredientes.length
-        ? el('ul', { class: 'ingredientes' }, r.ingredientes.map((i) => {
-            const t = textoIngrediente(i);
-            return el('li', {}, t.cantidad && el('strong', {}, `${t.cantidad} `), t.nombre, t.detalle && el('span', { class: 'detalle' }, `, ${t.detalle}`));
-          }))
-        : el('p', { class: 'ayuda' }, 'Sin ingredientes.'),
-    ),
+    el('dl', { class: 'ficha-datos' }, raciones, datos.map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v)))),
+    seccion('Ingredientes', aviso, ingredientes),
     seccion(
       'Pasos',
       r.pasos.length
@@ -135,6 +131,53 @@ export function construirFicha(r, { onPuntuar, onNota, verFoto } = {}) {
     ),
     seccionNotas(r, onNota),
   );
+}
+
+/** Recuadro «Raciones» con − y +: cambia las cantidades que se ven, no la receta guardada. */
+function selectorRaciones(r, alCambiar) {
+  let n = r.raciones;
+  const valor = el('dd', {}, String(n));
+  const menos = el('button', { type: 'button', class: 'icono', 'aria-label': 'Menos raciones' }, '−');
+  const mas = el('button', { type: 'button', class: 'icono', 'aria-label': 'Más raciones' }, '+');
+  const poner = (nuevo) => {
+    n = Math.min(50, Math.max(1, nuevo));
+    valor.textContent = String(n);
+    menos.disabled = n <= 1;
+    mas.disabled = n >= 50;
+    caja.classList.toggle('cambiado', n !== r.raciones);
+    alCambiar(n);
+  };
+  menos.addEventListener('click', () => poner(n - 1));
+  mas.addEventListener('click', () => poner(n + 1));
+  const caja = el('div', { class: 'datos-raciones' }, el('dt', {}, 'Raciones'), el('div', { class: 'paso-raciones' }, menos, valor, mas));
+  caja.volver = () => poner(r.raciones);
+  menos.disabled = n <= 1;
+  return caja;
+}
+
+function pintarIngredientes(contenedor, aviso, r, raciones) {
+  if (!r.ingredientes.length) return contenedor.replaceChildren(el('p', { class: 'ayuda' }, 'Sin ingredientes.'));
+  const escalados = escalarReceta(r, raciones);
+  contenedor.replaceChildren(
+    el('ul', { class: 'ingredientes' }, escalados.map((i) => {
+      const t = textoIngrediente(i);
+      return el(
+        'li',
+        {},
+        t.cantidad && el('strong', {}, `${t.cantidad} `),
+        t.nombre,
+        t.detalle && el('span', { class: 'detalle' }, `, ${t.detalle}`),
+        i.redondeada && el('span', { class: 'redondeo', title: 'Redondeado: no se puede usar una parte' }, ` (redondeado; exactamente ${formatearCantidad(Math.round(i.exacta * 100) / 100)})`),
+      );
+    })),
+  );
+  aviso.hidden = raciones === r.raciones;
+  if (raciones !== r.raciones) {
+    aviso.replaceChildren(
+      `Cantidades para ${raciones} ${raciones === 1 ? 'ración' : 'raciones'} (la receta es para ${r.raciones}). `,
+      el('button', { type: 'button', class: 'enlace', onclick: () => contenedor.closest('.ficha').querySelector('.datos-raciones').volver() }, `Volver a ${r.raciones}`),
+    );
+  }
 }
 
 function tachar(evento) {
