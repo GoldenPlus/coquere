@@ -17,6 +17,7 @@ npm run versionar  # tras cambiar CSS o JS: actualiza marcas de versión y CSP e
 | `js/main.js` | Interfaz: listado, ajustes, alta de recetas y arranque |
 | `js/listado.js` | Listado de recetas de la pantalla principal |
 | `js/filtros.js` | Búsqueda y filtros del listado |
+| `js/menus.js`, `js/vista-menu.js` | Menú semanal (`menus.json`) y ajustes de la familia (`ajustes.json`) |
 | `js/ingredientes.js` | Mismo ingrediente escrito de otra forma (`claveIngrediente`) y sugerencias de nombres |
 | `js/fotos.js` | Fotos: reducir en el dispositivo, subir a `fotos/` del repo privado, ver con caché |
 | `js/ficha.js` | Ficha de receta (`#receta/<id>`) y pantalla encendida mientras se cocina |

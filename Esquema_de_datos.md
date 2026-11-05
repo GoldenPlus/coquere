@@ -73,3 +73,36 @@ Solo se admiten estas, para que el escalado y la lista de la compra puedan sumar
 | Sin cantidad | `al gusto`: la cantidad siempre es `null` |
 
 Añadir una unidad es seguro (basta con incluirla en `UNIDADES`); quitarla o renombrarla obligaría a migrar recetas.
+
+## menus.json
+
+Una entrada por día y hueco (comida o cena); un hueco vacío simplemente no tiene entrada.
+
+```json
+{
+  "version": 1,
+  "items": [
+    { "fecha": "2026-11-09", "hueco": "cena", "receta": "r3f9a1c2b7d40", "raciones": 4, "origen": "manual" }
+  ]
+}
+```
+
+| Campo | Tipo | Notas |
+| --- | --- | --- |
+| `fecha` | `AAAA-MM-DD` | Día local del dispositivo, sin hora. |
+| `hueco` | `comida` o `cena` | |
+| `receta` | id de receta | Al borrar una receta se quitan sus entradas. |
+| `raciones` | entero 1–50 | Por defecto, las raciones de la familia (ver `ajustes.json`). |
+| `origen` | `manual` o `auto` | `manual`: elegida a mano; el generador de menús (PL-02) no la cambia. |
+
+## ajustes.json
+
+Ajustes compartidos por toda la familia (los de cada dispositivo, como el token, no salen de ese dispositivo). No es una lista.
+
+```json
+{ "version": 1, "racionesFamilia": 4 }
+```
+
+| Campo | Tipo | Notas |
+| --- | --- | --- |
+| `racionesFamilia` | entero 1–50 | Raciones con las que entra una receta nueva en el menú. Si falta, 4. |

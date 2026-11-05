@@ -1,4 +1,4 @@
-// Interfaz: listado de recetas, estado de la conexión, ajustes, alta de recetas y arranque.
+// Interfaz: navegación entre recetas, menú y ficha; ajustes; alta de recetas y arranque.
 
 import { guardarConfig, borrarConfig, normalizarRepo } from './config.js';
 import { crearCliente } from './github.js';
@@ -12,6 +12,8 @@ import { mostrarFoto } from './fotos.js';
 import { filtrosVacios, filtrosActivos, filtrarRecetas, construirPanel } from './filtros.js';
 import { pintarListado } from './listado.js';
 import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './ficha.js';
+import { inicioSemana, racionesFamilia, guardarRacionesFamilia, usosDeReceta, quitarRecetaDeMenus, leerFecha, esFechaISO } from './menus.js';
+import { prepararMenu, pintarMenu, hoyISO } from './vista-menu.js';
 
 function mostrarEstado(texto, esError = false) {
   const nodo = $('#estado');
@@ -19,13 +21,22 @@ function mostrarEstado(texto, esError = false) {
   nodo.classList.toggle('error', esError);
 }
 
-/** Receta abierta según la dirección (#receta/<id>), o null en el listado. */
-function idEnDireccion() {
-  const m = location.hash.match(/^#receta\/(.+)$/);
-  return m ? decodeURIComponent(m[1]) : null;
+/**
+ * Vista según la dirección: «#receta/<id>» (ficha), «#menu» o «#menu/<fecha>» (semana de esa fecha)
+ * y cualquier otra cosa, el listado de recetas.
+ */
+function vistaEnDireccion() {
+  const ficha = location.hash.match(/^#receta\/(.+)$/);
+  if (ficha) return { tipo: 'receta', id: decodeURIComponent(ficha[1]) };
+  const menu = location.hash.match(/^#menu(?:\/(\d{4}-\d{2}-\d{2}))?$/);
+  if (menu) return { tipo: 'menu', lunes: inicioSemana(menu[1] && esFechaISO(menu[1]) ? menu[1] : hoyISO()) };
+  return { tipo: 'recetas' };
 }
+const idEnDireccion = () => (vistaEnDireccion().tipo === 'receta' ? vistaEnDireccion().id : null);
 
-let scrollListado = 0;
+/** Dónde estaba cada vista al salir de ella, para volver al mismo sitio. */
+const scrollPorVista = { recetas: 0, menu: 0 };
+let vistaAnterior = 'recetas';
 /** Búsqueda y filtros del listado: duran mientras la app está abierta (también al ir y volver de una ficha). */
 let filtros = filtrosVacios();
 const verFoto = (img, ruta) => mostrarFoto(img, app.cliente, ruta);
@@ -33,15 +44,21 @@ const verFoto = (img, ruta) => mostrarFoto(img, app.cliente, ruta);
 function render() {
   // Con copia local se muestra al instante, aunque aún no haya respuesta de GitHub.
   const hayDatos = Boolean(app.cliente && app.almacen.fecha);
-  const id = hayDatos ? idEnDireccion() : null;
-  const enFicha = id !== null;
-  $('#recetario').hidden = !hayDatos || enFicha;
+  const vista = vistaEnDireccion();
+  const enFicha = hayDatos && vista.tipo === 'receta';
+  const enMenu = hayDatos && vista.tipo === 'menu';
+  $('#pestanas').hidden = !hayDatos || enFicha;
+  $('#recetario').hidden = !hayDatos || enFicha || enMenu;
+  $('#vista-menu').hidden = !enMenu;
   $('#vista-ficha').hidden = !enFicha;
-  $('#btn-nueva').hidden = !hayDatos || enFicha;
+  $('#btn-nueva').hidden = !hayDatos || enFicha || enMenu;
+  $('#pestana-recetas').toggleAttribute('aria-current', !enMenu);
+  $('#pestana-menu').toggleAttribute('aria-current', enMenu);
   pantallaEncendida(enFicha);
   if (!hayDatos) return;
   const recetas = app.almacen.items('recetas');
-  if (enFicha) return pintarFicha(recetas.find((r) => r.id === id));
+  if (enFicha) return pintarFicha(recetas.find((r) => r.id === vista.id));
+  if (enMenu) return pintarMenu(vista.lunes);
   const visibles = filtrarRecetas(recetas, filtros);
   const filtrando = visibles.length !== recetas.length || filtros.texto.trim() !== '' || filtrosActivos(filtros) > 0;
   const total = recetas.length === 1 ? '1 receta' : `${recetas.length} recetas`;
@@ -95,18 +112,20 @@ function pintarFicha(receta) {
   $('#ficha-pantalla').hidden = !(receta && puedeMantenerPantalla());
 }
 
-/** Al cambiar de vista: la ficha empieza arriba; la lista vuelve a donde estaba. */
+/** Al cambiar de vista: la ficha empieza arriba; la lista y el menú vuelven a donde estaban. */
 function cambioDeVista() {
-  const deListado = $('#vista-ficha').hidden;
-  if (deListado) scrollListado = window.scrollY;
+  if (vistaAnterior !== 'receta') scrollPorVista[vistaAnterior] = window.scrollY;
   render();
-  if (idEnDireccion() === null) fichaPintada = null;
-  window.scrollTo(0, idEnDireccion() !== null ? 0 : scrollListado);
+  const { tipo } = vistaEnDireccion();
+  if (tipo !== 'receta') fichaPintada = null;
+  $('#ficha-volver').textContent = history.state?.desde === 'menu' ? '← Menú' : '← Recetas';
+  if (tipo !== vistaAnterior) window.scrollTo(0, tipo === 'receta' ? 0 : scrollPorVista[tipo]);
+  vistaAnterior = tipo;
 }
 
-/** Volver con «atrás» si se llegó desde la lista; si se abrió la ficha directamente, ir a la lista. */
+/** Volver con «atrás» si se llegó desde la lista o el menú; si se abrió la ficha directamente, ir a la lista. */
 function volver() {
-  if (history.state?.desdeListado) history.back();
+  if (history.state?.desde) history.back();
   else location.replace('#');
 }
 
@@ -142,6 +161,8 @@ function abrirAjustes() {
   $('#conexion-fecha').textContent = fechaLegible(app.almacen.fecha);
   $('#ajustes-cancelar').hidden = !app.cliente;
   $('#ajustes-olvidar').hidden = !app.cliente;
+  $('#ajustes-familia').hidden = !(app.cliente && app.almacen.fecha);
+  f.racionesFamilia.value = racionesFamilia(app.almacen.datos('ajustes'));
   $('#dlg-ajustes').showModal();
 }
 
@@ -159,6 +180,11 @@ async function guardarAjustes(evento) {
   try {
     const cliente = crearCliente(nueva);
     await app.almacen.recargar(cliente);
+    // Raciones de la familia: compartidas en ajustes.json, solo si se han cambiado.
+    const raciones = Number(f.racionesFamilia.value);
+    if (!$('#ajustes-familia').hidden && raciones !== racionesFamilia(app.almacen.datos('ajustes'))) {
+      app.almacen.fijar('ajustes', await guardarRacionesFamilia(cliente, raciones, nueva.nombre));
+    }
     guardarConfig(nueva);
     app.config = nueva;
     app.cliente = cliente;
@@ -228,12 +254,16 @@ async function guardarNota(textarea, boton) {
 async function borrarFicha() {
   const receta = fichaActual;
   if (!receta) return;
-  // Cuando haya menús (PL-01), aquí se avisará si la receta está en alguno.
-  if (!confirm(`¿Borrar «${receta.titulo}»?\nSe borra en todos los dispositivos y no se puede deshacer.`)) return;
+  const usos = usosDeReceta(app.almacen.items('menus'), receta.id);
+  const enMenu = usos.length
+    ? `\n\nEstá en el menú (se quitará de ahí):\n${usos.slice(0, 6).map((u) => `· ${leerFecha(u.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}, ${u.hueco}`).join('\n')}${usos.length > 6 ? `\n· y ${usos.length - 6} más` : ''}`
+    : '';
+  if (!confirm(`¿Borrar «${receta.titulo}»?\nSe borra en todos los dispositivos y no se puede deshacer.${enMenu}`)) return;
   const listo = ocupado($('#ficha-borrar'), 'Borrando…');
   try {
     const { datos } = await borrarReceta(app.cliente, receta, app.config.nombre);
     app.almacen.fijar('recetas', datos);
+    if (usos.length) app.almacen.fijar('menus', await quitarRecetaDeMenus(app.cliente, receta, app.config.nombre));
     volver();
     aviso(`Borrada: ${receta.titulo}`);
   } catch (e) {
@@ -265,18 +295,22 @@ function iniciar() {
   $('#quitar-filtros').addEventListener('click', quitarFiltros);
   $('#ficha-editar').addEventListener('click', () => fichaActual && abrirEditarReceta(fichaActual));
   $('#ficha-borrar').addEventListener('click', borrarFicha);
-  // Marca las entradas abiertas desde la lista, para que «← Recetas» equivalga al botón atrás.
-  $('#listado').addEventListener('click', (e) => {
-    const enlace = e.target.closest('a[href^="#receta/"]');
-    if (!enlace) return;
-    e.preventDefault();
-    history.pushState({ desdeListado: true }, '', enlace.getAttribute('href'));
-    cambioDeVista();
-  });
+  // Marca las fichas abiertas desde la lista o el menú, para que «←» equivalga al botón atrás.
+  for (const [contenedor, desde] of [['#listado', 'recetas'], ['#vista-menu', 'menu']]) {
+    $(contenedor).addEventListener('click', (e) => {
+      const enlace = e.target.closest('a[href^="#receta/"]');
+      if (!enlace) return;
+      e.preventDefault();
+      history.pushState({ desde }, '', enlace.getAttribute('href'));
+      cambioDeVista();
+    });
+  }
+  prepararMenu(app, render);
 
   window.addEventListener('online', recargar);
   window.addEventListener('offline', () => mostrarEstado('Sin conexión. Puedes consultar, pero no guardar cambios.'));
 
+  vistaAnterior = vistaEnDireccion().tipo;
   render();
   if (app.cliente) recargar();
   else abrirAjustes();

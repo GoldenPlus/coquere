@@ -123,11 +123,11 @@ export function crearCliente({ token, repo, fetch: fetchImpl = (...a) => globalT
   /**
    * Lee la versión más reciente, aplica `mutar(datos)` (que puede lanzar, por ejemplo por duplicado)
    * y guarda. Si `mutar` devuelve null no hay nada que guardar. Ante un conflicto de sha vuelve
-   * a empezar, hasta `intentos` veces.
+   * a empezar, hasta `intentos` veces. `lista: false` para ficheros sin "items" (ajustes.json).
    */
-  async function actualizar(fichero, mutar, mensaje, intentos = 3) {
+  async function actualizar(fichero, mutar, mensaje, { intentos = 3, lista = true } = {}) {
     for (let i = 0; i < intentos; i++) {
-      const { datos, sha } = await leer(fichero);
+      const { datos, sha } = await leer(fichero, { lista });
       const nuevos = mutar(datos);
       if (nuevos === null) return { datos, sha };
       try {

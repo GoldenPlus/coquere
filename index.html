@@ -8,11 +8,11 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-89pG5PiIRPJCnZJ8Ld9NJ0HvhAnPIVaDMgRJAfG8Vx8='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=fb473017ec">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-hFlDqCrpP+GK6yDKr/8tCQ/4s5R+ofMgIRpGsGvWfCU='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=1288763473">
   <script type="importmap">
   { "imports": {
-      "./js/almacen.js": "./js/almacen.js?v=db73d54f84",
+      "./js/almacen.js": "./js/almacen.js?v=0854bcde84",
       "./js/config.js": "./js/config.js?v=640e00eb72",
       "./js/dom.js": "./js/dom.js?v=749c587cc2",
       "./js/estado.js": "./js/estado.js?v=941b583a8f",
@@ -20,16 +20,18 @@
       "./js/filtros.js": "./js/filtros.js?v=6bd4f94801",
       "./js/formulario-receta.js": "./js/formulario-receta.js?v=df0450dfd2",
       "./js/fotos.js": "./js/fotos.js?v=a3917a6171",
-      "./js/github.js": "./js/github.js?v=e2692930d9",
+      "./js/github.js": "./js/github.js?v=fd3d2078e2",
       "./js/ingredientes.js": "./js/ingredientes.js?v=b734b56623",
       "./js/listado.js": "./js/listado.js?v=f991ec5e74",
-      "./js/main.js": "./js/main.js?v=0536b5110f",
+      "./js/main.js": "./js/main.js?v=dcebd183c6",
+      "./js/menus.js": "./js/menus.js?v=afd4d704d2",
       "./js/receta.js": "./js/receta.js?v=cf59f461bd",
       "./js/recetas.js": "./js/recetas.js?v=89fc9e0555",
-      "./js/texto.js": "./js/texto.js?v=847e5e4645"
+      "./js/texto.js": "./js/texto.js?v=847e5e4645",
+      "./js/vista-menu.js": "./js/vista-menu.js?v=7385c90c90"
   } }
   </script>
-  <script type="module" src="js/main.js?v=0536b5110f"></script>
+  <script type="module" src="js/main.js?v=dcebd183c6"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -42,6 +44,10 @@
   </header>
 
   <main>
+    <nav id="pestanas" class="pestanas" aria-label="Secciones" hidden>
+      <a id="pestana-recetas" href="#">Recetas</a>
+      <a id="pestana-menu" href="#menu">Menú</a>
+    </nav>
     <p id="estado" class="estado" role="status"></p>
     <section id="recetario" hidden>
       <div class="buscador">
@@ -51,6 +57,15 @@
       <div id="filtros" class="panel-filtros" hidden></div>
       <p class="resumen"><span id="resumen-recetas"></span> · <span id="resumen-fecha"></span><button id="quitar-filtros" type="button" class="enlace" hidden>Quitar filtros</button></p>
       <div id="listado"></div>
+    </section>
+    <section id="vista-menu" hidden>
+      <div class="barra-semana">
+        <button id="semana-anterior" class="icono" type="button" title="Semana anterior" aria-label="Semana anterior">‹</button>
+        <h2 id="semana-nombre"></h2>
+        <button id="semana-siguiente" class="icono" type="button" title="Semana siguiente" aria-label="Semana siguiente">›</button>
+        <button id="semana-hoy" class="secundario" type="button">Hoy</button>
+      </div>
+      <div id="semana" class="semana"></div>
     </section>
     <section id="vista-ficha" hidden>
       <div class="barra-ficha">
@@ -132,6 +147,18 @@
     </form>
   </dialog>
 
+  <!-- Elegir receta para un hueco del menú -->
+  <dialog id="dlg-elegir" class="grande">
+    <div class="formulario">
+      <h2 id="elegir-titulo"></h2>
+      <input id="elegir-buscar" type="search" placeholder="Buscar por título o ingrediente" aria-label="Buscar receta" autocomplete="off">
+      <ul id="elegir-lista" class="opciones-receta"></ul>
+      <div class="botones pie">
+        <button id="elegir-cancelar" type="button" class="secundario">Cancelar</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Ajustes -->
   <dialog id="dlg-ajustes">
     <form id="form-ajustes" class="formulario">
@@ -151,6 +178,13 @@
       <label>Token de GitHub
         <input name="token" type="password" required autocomplete="off" spellcheck="false">
       </label>
+      <fieldset id="ajustes-familia" hidden>
+        <legend>Para toda la familia</legend>
+        <p class="ayuda">Se comparte con todos los dispositivos.</p>
+        <label>Raciones por defecto en el menú
+          <input name="racionesFamilia" type="number" min="1" max="50" step="1" inputmode="numeric">
+        </label>
+      </fieldset>
       <p id="ajustes-error" class="error" role="alert"></p>
       <div class="botones">
         <button id="ajustes-olvidar" type="button" class="peligro">Olvidar este dispositivo</button>
