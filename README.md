@@ -2,7 +2,7 @@
 
 Recetario familiar con planificador de menús y lista de la compra. Web estática (GitHub Pages) que lee y escribe los datos en un repo privado de GitHub; cada dispositivo se conecta con su propio token. Sin servidor ni paso de compilación.
 
-Para configurarlo: [Puesta_en_marcha.md](Puesta_en_marcha.md).
+Para configurarlo: [Puesta_en_marcha.md](Puesta_en_marcha.md). Formato de los datos: [Esquema_de_datos.md](Esquema_de_datos.md).
 
 ## Desarrollo
 
@@ -16,6 +16,7 @@ npm run versionar  # tras cambiar CSS o JS: actualiza marcas de versión y CSP e
 | --- | --- |
 | `js/main.js` | Interfaz: estado de la conexión, ajustes y arranque |
 | `js/github.js` | Contents API: leer con `sha`, escribir y reintentar ante conflicto, archivos |
+| `js/receta.js` | Modelo de receta: unidades, normalización y validación |
 | `js/almacen.js` | Datos en memoria y copia en `localStorage` |
 | `js/config.js` | Ajustes del dispositivo (nombre, repo, token) |
 | `js/estado.js`, `js/dom.js`, `js/texto.js` | Estado compartido y ayudantes |
