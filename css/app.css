@@ -24,7 +24,7 @@
     --exito: #a9c97f;
     --error: #ff8a80;
   }
-  .estrellas { color: #e7b955; }
+  .estrellas, .puntuador .estrella.llena { color: #e7b955; }
 }
 
 * { box-sizing: border-box; }
@@ -233,3 +233,11 @@ legend { font-weight: 600; padding: 0 0.3rem; }
 .notas li { background: var(--superficie); border-left: 3px solid var(--acento); border-radius: 0 8px 8px 0; padding: 0.4rem 0.7rem; }
 .notas p { margin: 0; white-space: pre-line; }
 .pantalla { margin-top: 1.5rem; text-align: center; }
+
+/* Puntuación y notas en la ficha */
+.puntuador { display: flex; align-items: center; gap: 0.1rem; margin: 0 0 0.4rem; }
+.puntuador .estrella { background: transparent; color: #c08a1e; font-size: 1.7rem; line-height: 1; padding: 0.1rem 0.15rem; border-radius: 6px; }
+.puntuador .estrella:not(.llena) { color: var(--suave); }
+.puntuador .ayuda { margin-left: 0.5rem; font-size: 0.85rem; }
+.nueva-nota { display: grid; gap: 0.4rem; margin-bottom: 0.8rem; }
+.nueva-nota button { justify-self: end; }

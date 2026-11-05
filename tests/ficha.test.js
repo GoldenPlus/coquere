@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatearCantidad, textoIngrediente } from '../js/ficha.js';
+import { formatearCantidad, textoIngrediente, notasOrdenadas } from '../js/ficha.js';
 
 test('formatearCantidad usa fracciones de cocina y coma decimal', () => {
   assert.equal(formatearCantidad(6), '6');
@@ -27,4 +27,14 @@ test('textoIngrediente se lee como en un recetario', () => {
   assert.equal(t(null, 'g', 'harina'), 'harina');
   assert.equal(t(null, 'al gusto', 'pimienta', 'negra'), 'pimienta, negra, al gusto');
   assert.equal(t(null, 'unidad', 'limón'), 'limón');
+});
+
+test('las notas se muestran de la más reciente a la más antigua', () => {
+  const notas = [
+    { fecha: '2026-10-01T10:00:00.000Z', texto: 'vieja' },
+    { fecha: '2026-11-05T10:00:00.000Z', texto: 'nueva' },
+    { fecha: '2026-10-20T10:00:00.000Z', texto: 'media' },
+  ];
+  assert.deepEqual(notasOrdenadas(notas).map((n) => n.texto), ['nueva', 'media', 'vieja']);
+  assert.equal(notas[0].texto, 'vieja');
 });

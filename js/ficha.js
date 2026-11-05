@@ -44,8 +44,52 @@ function seccion(titulo, ...contenido) {
   return el('section', { class: 'ficha-seccion' }, el('h3', {}, titulo), ...contenido);
 }
 
-/** Construye la ficha completa (sin la barra de volver, que pone main.js). */
-export function construirFicha(r) {
+/** Cinco estrellas que se tocan para puntuar. */
+function puntuador(r, onPuntuar) {
+  const estrellasBotones = [1, 2, 3, 4, 5].map((n) =>
+    el('button', {
+      type: 'button',
+      class: `estrella${r.puntuacion >= n ? ' llena' : ''}`,
+      'aria-label': `Puntuar con ${n} de 5`,
+      'aria-pressed': String(r.puntuacion === n),
+      onclick: (e) => onPuntuar(n, e.currentTarget.parentElement),
+    }, r.puntuacion >= n ? '★' : '☆'),
+  );
+  return el(
+    'div',
+    { class: 'puntuador', role: 'group', 'aria-label': 'Puntuación' },
+    estrellasBotones,
+    el('span', { class: 'ayuda' }, r.puntuacion ? `${r.puntuacion} de 5` : 'Sin puntuar: toca una estrella'),
+  );
+}
+
+/** Notas de la más reciente a la más antigua. */
+export const notasOrdenadas = (notas) => [...notas].sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+function seccionNotas(r, onNota) {
+  if (!onNota && !r.notas.length) return null;
+  let formulario = null;
+  if (onNota) {
+    const texto = el('textarea', { rows: 2, placeholder: 'Por ejemplo: la última vez le faltó sal', 'aria-label': 'Nueva nota' });
+    const boton = el('button', { type: 'submit' }, 'Añadir nota');
+    formulario = el('form', { class: 'nueva-nota', onsubmit: (e) => (e.preventDefault(), onNota(texto, boton)) }, texto, boton);
+  }
+  return seccion(
+    'Notas',
+    formulario,
+    r.notas.length
+      ? el('ul', { class: 'notas' }, notasOrdenadas(r.notas).map((n) =>
+          el('li', {}, el('p', {}, n.texto), el('p', { class: 'ayuda' }, `${n.autor} · ${fechaLegible(n.fecha)}`)),
+        ))
+      : el('p', { class: 'ayuda' }, 'Aún no hay notas.'),
+  );
+}
+
+/**
+ * Construye la ficha completa (sin la barra de volver, que pone main.js).
+ * `onPuntuar(n, grupo)` y `onNota(textarea, boton)` guardan; sin ellos la ficha es de solo lectura.
+ */
+export function construirFicha(r, { onPuntuar, onNota } = {}) {
   const datos = [
     ['Raciones', String(r.raciones)],
     ['Tiempo', formatearTiempo(r.tiempo)],
@@ -57,7 +101,9 @@ export function construirFicha(r) {
     'article',
     { class: 'ficha' },
     el('h2', {}, r.titulo),
-    r.puntuacion && el('p', { class: 'estrellas grande', 'aria-label': `Puntuación: ${r.puntuacion} de 5` }, estrellas(r.puntuacion)),
+    onPuntuar
+      ? puntuador(r, onPuntuar)
+      : r.puntuacion && el('p', { class: 'estrellas grande', 'aria-label': `Puntuación: ${r.puntuacion} de 5` }, estrellas(r.puntuacion)),
     chips.length && el('ul', { class: 'chips' }, chips.map(([tipo, t]) => el('li', { class: tipo }, t))),
     datos.length && el('dl', { class: 'ficha-datos' }, datos.map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v)))),
     seccion(
@@ -80,13 +126,7 @@ export function construirFicha(r) {
           ]
         : el('p', { class: 'ayuda' }, 'Sin pasos.'),
     ),
-    r.notas.length &&
-      seccion(
-        'Notas',
-        el('ul', { class: 'notas' }, r.notas.map((n) =>
-          el('li', {}, el('p', {}, n.texto), el('p', { class: 'ayuda' }, `${n.autor} · ${fechaLegible(n.fecha)}`)),
-        )),
-      ),
+    seccionNotas(r, onNota),
   );
 }
 

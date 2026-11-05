@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { crearCliente, codificarBase64, decodificarBase64 } from '../js/github.js';
 import { nuevaReceta } from '../js/receta.js';
-import { crearReceta, editarReceta, borrarReceta, textoALista, RecetaInvalidaError, RecetaCambiadaError, RecetaBorradaError } from '../js/recetas.js';
+import { crearReceta, editarReceta, borrarReceta, puntuarReceta, anadirNota, textoALista, RecetaInvalidaError, RecetaCambiadaError, RecetaBorradaError } from '../js/recetas.js';
 
 globalThis.crypto ??= webcrypto; // Node 18 no lo trae global; el navegador sí.
 
@@ -146,4 +146,45 @@ test('borrar quita la receta y su foto; si ya no estaba, no escribe nada', async
   assert.deepEqual(gh.borrados, ['fotos/lentejas.jpg']);
   await borrarReceta(gh.cliente, b, 'Ana');
   assert.deepEqual(gh.mensajes, ['Borrada: Lentejas (por Ana)']);
+});
+
+test('puntuar y anotar se guardan sin cambiar la fecha de modificación', async () => {
+  const r = guardada('Lentejas');
+  const gh = github({ items: [r] });
+  await puntuarReceta(gh.cliente, r, 4, 'Ana');
+  await anadirNota(gh.cliente, r, '  Le faltó sal  ', 'Ana', new Date('2026-11-05T12:00:00Z'));
+  const { receta } = await anadirNota(gh.cliente, r, 'Mejor con chorizo', 'Luis', new Date('2026-11-12T12:00:00Z'));
+  assert.equal(receta.puntuacion, 4);
+  assert.deepEqual(receta.notas, [
+    { fecha: '2026-11-05T12:00:00.000Z', autor: 'Ana', texto: 'Le faltó sal' },
+    { fecha: '2026-11-12T12:00:00.000Z', autor: 'Luis', texto: 'Mejor con chorizo' },
+  ]);
+  assert.equal(receta.modificada, r.modificada);
+  assert.deepEqual(gh.mensajes, ['Puntuación 4/5: Lentejas (por Ana)', 'Nota: Lentejas (por Ana)', 'Nota: Lentejas (por Luis)']);
+});
+
+test('una nota añadida desde otro dispositivo a la vez no se pierde', async () => {
+  const r = guardada('Lentejas');
+  const suya = { fecha: '2026-11-05T11:00:00.000Z', autor: 'Luis', texto: 'La suya' };
+  const gh = github({ items: [r], otroCambia: (items) => [{ ...items[0], notas: [suya] }] });
+  const { receta } = await anadirNota(gh.cliente, r, 'La mía', 'Ana', new Date('2026-11-05T12:00:00Z'));
+  assert.deepEqual(receta.notas.map((n) => n.texto), ['La suya', 'La mía']);
+});
+
+test('editar, incluso guardando encima, nunca borra notas ni puntuación de GitHub', async () => {
+  const r = guardada('Lentejas');
+  const nota = { fecha: '2026-11-05T11:00:00.000Z', autor: 'Luis', texto: 'No me borres' };
+  const gh = github({ items: [r], otroCambia: (items) => [{ ...items[0], notas: [nota], puntuacion: 5, titulo: 'Otro título', modificada: '2026-11-05T11:00:00.000Z' }] });
+  // El formulario se abrió antes: lleva notas vacías y sin puntuación.
+  const { receta } = await editarReceta(gh.cliente, { ...r, raciones: '2' }, 'Ana', { base: r.modificada, forzar: true });
+  assert.equal(receta.titulo, 'Lentejas');
+  assert.deepEqual(receta.notas, [nota]);
+  assert.equal(receta.puntuacion, 5);
+});
+
+test('anotar en una receta borrada o con nota vacía da un error claro', async () => {
+  const r = guardada('Lentejas');
+  await assert.rejects(anadirNota(github({ items: [guardada('Otra')] }).cliente, r, 'hola', 'Ana'), RecetaBorradaError);
+  await assert.rejects(anadirNota(github({ items: [r] }).cliente, r, '   ', 'Ana'), RecetaInvalidaError);
+  await assert.rejects(puntuarReceta(github({ items: [r] }).cliente, r, 7, 'Ana'), /La puntuación va de 1 a 5/);
 });

@@ -7,7 +7,7 @@ import { limpiar } from './texto.js';
 import { app } from './estado.js';
 import { $, el, aviso, fechaLegible, ocupado } from './dom.js';
 import { abrirNuevaReceta, abrirEditarReceta, prepararFormularioReceta } from './formulario-receta.js';
-import { borrarReceta } from './recetas.js';
+import { borrarReceta, puntuarReceta, anadirNota } from './recetas.js';
 import { pintarListado } from './listado.js';
 import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './ficha.js';
 
@@ -51,11 +51,11 @@ function pintarFicha(receta) {
   $('#ficha-editar').hidden = !receta;
   $('#ficha-borrar').hidden = !receta;
   // Si se actualiza desde GitHub y la receta no ha cambiado, no se redibuja: se conservan los pasos tachados.
-  const clave = receta ? `${receta.id}@${receta.modificada}` : 'ninguna';
+  const clave = receta ? JSON.stringify(receta) : 'ninguna';
   if (clave === fichaPintada && !$('#vista-ficha').hidden) return;
   fichaPintada = clave;
   $('#ficha').replaceChildren(
-    receta ? construirFicha(receta) : el('p', { class: 'vacio' }, 'No se encuentra esta receta. Puede que la hayan borrado desde otro dispositivo.'),
+    receta ? construirFicha(receta, { onPuntuar: puntuar, onNota: guardarNota }) : el('p', { class: 'vacio' }, 'No se encuentra esta receta. Puede que la hayan borrado desde otro dispositivo.'),
   );
   $('#ficha-pantalla').hidden = !(receta && puedeMantenerPantalla());
 }
@@ -155,6 +155,39 @@ function recetaGuardada(datos, receta) {
   app.almacen.fijar('recetas', datos);
   render();
   aviso(`Guardada: ${receta.titulo}`);
+}
+
+/** Guarda en GitHub un cambio pequeño de la ficha (puntuación o nota) y la redibuja. */
+async function cambioEnFicha(boton, accion, textoOk) {
+  const listo = ocupado(boton);
+  try {
+    const { datos } = await accion();
+    app.almacen.fijar('recetas', datos);
+    render();
+    aviso(textoOk);
+    return true;
+  } catch (e) {
+    aviso(`No se ha guardado. ${e.message}`);
+    return false;
+  } finally {
+    listo();
+  }
+}
+
+function puntuar(n, grupo) {
+  const receta = fichaActual;
+  for (const b of grupo.querySelectorAll('button')) b.disabled = true;
+  cambioEnFicha(grupo.querySelectorAll('button')[n - 1], () => puntuarReceta(app.cliente, receta, n, app.config.nombre), `Puntuación: ${n} de 5`)
+    .finally(() => grupo.querySelectorAll('button').forEach((b) => (b.disabled = false)));
+}
+
+async function guardarNota(textarea, boton) {
+  const receta = fichaActual;
+  if (!textarea.value.trim()) return textarea.focus();
+  textarea.disabled = true;
+  const ok = await cambioEnFicha(boton, () => anadirNota(app.cliente, receta, textarea.value, app.config.nombre), 'Nota añadida');
+  // Si falló, el texto sigue ahí para reintentar; si fue bien, la ficha ya se ha redibujado.
+  if (!ok) textarea.disabled = false;
 }
 
 async function borrarFicha() {
