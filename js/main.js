@@ -6,7 +6,8 @@ import { crearAlmacen } from './almacen.js';
 import { limpiar } from './texto.js';
 import { app } from './estado.js';
 import { $, el, aviso, fechaLegible, ocupado } from './dom.js';
-import { abrirNuevaReceta, prepararFormularioReceta } from './formulario-receta.js';
+import { abrirNuevaReceta, abrirEditarReceta, prepararFormularioReceta } from './formulario-receta.js';
+import { borrarReceta } from './recetas.js';
 import { pintarListado } from './listado.js';
 import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './ficha.js';
 
@@ -42,8 +43,13 @@ function render() {
 }
 
 let fichaPintada = null;
+/** Receta mostrada en la ficha (para Editar y Borrar). */
+let fichaActual = null;
 
 function pintarFicha(receta) {
+  fichaActual = receta ?? null;
+  $('#ficha-editar').hidden = !receta;
+  $('#ficha-borrar').hidden = !receta;
   // Si se actualiza desde GitHub y la receta no ha cambiado, no se redibuja: se conservan los pasos tachados.
   const clave = receta ? `${receta.id}@${receta.modificada}` : 'ninguna';
   if (clave === fichaPintada && !$('#vista-ficha').hidden) return;
@@ -151,6 +157,24 @@ function recetaGuardada(datos, receta) {
   aviso(`Guardada: ${receta.titulo}`);
 }
 
+async function borrarFicha() {
+  const receta = fichaActual;
+  if (!receta) return;
+  // Cuando haya menús (PL-01), aquí se avisará si la receta está en alguno.
+  if (!confirm(`¿Borrar «${receta.titulo}»?\nSe borra en todos los dispositivos y no se puede deshacer.`)) return;
+  const listo = ocupado($('#ficha-borrar'), 'Borrando…');
+  try {
+    const { datos } = await borrarReceta(app.cliente, receta, app.config.nombre);
+    app.almacen.fijar('recetas', datos);
+    volver();
+    aviso(`Borrada: ${receta.titulo}`);
+  } catch (e) {
+    aviso(`No se ha borrado. ${e.message}`);
+  } finally {
+    listo();
+  }
+}
+
 // ---------- Arranque
 
 function iniciar() {
@@ -168,6 +192,8 @@ function iniciar() {
 
   window.addEventListener('hashchange', cambioDeVista);
   $('#ficha-volver').addEventListener('click', volver);
+  $('#ficha-editar').addEventListener('click', () => fichaActual && abrirEditarReceta(fichaActual));
+  $('#ficha-borrar').addEventListener('click', borrarFicha);
   // Marca las entradas abiertas desde la lista, para que «← Recetas» equivalga al botón atrás.
   $('#listado').addEventListener('click', (e) => {
     const enlace = e.target.closest('a[href^="#receta/"]');

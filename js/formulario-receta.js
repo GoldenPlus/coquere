@@ -1,12 +1,16 @@
-// Formulario de receta nueva: campos básicos, filas de ingredientes y pasos que se pueden reordenar.
+// Formulario de receta, nueva o para editar: campos básicos, filas de ingredientes y pasos que se pueden reordenar.
 
 import { UNIDADES, nuevaReceta } from './receta.js';
-import { crearReceta, textoALista, RecetaInvalidaError } from './recetas.js';
-import { $, el, ocupado } from './dom.js';
+import { crearReceta, editarReceta, textoALista, RecetaInvalidaError, RecetaCambiadaError } from './recetas.js';
+import { $, el, ocupado, fechaLegible } from './dom.js';
 
 const dialogo = () => $('#dlg-receta');
 const formulario = () => $('#form-receta');
 let borrador = null;
+/** Al editar: `modificada` de la versión de partida, para detectar cambios de otros. null en una receta nueva. */
+let base = null;
+/** Lo que había al abrir, para saber si hay cambios que se perderían. */
+let inicial = '';
 let alGuardar = () => {};
 
 // ---------- Ingredientes
@@ -98,13 +102,7 @@ function leerFormulario() {
 }
 
 /** ¿Hay algo escrito que se perdería al cerrar? */
-function hayCambios() {
-  const r = leerFormulario();
-  return Boolean(
-    r.titulo.trim() || r.categorias.length || r.etiquetas.length || r.tiempo || r.dificultad ||
-      r.ingredientes.some((i) => i.nombre.trim() || i.cantidad.trim()) || r.pasos.some((p) => p.trim()),
-  );
-}
+const hayCambios = () => JSON.stringify(leerFormulario()) !== inicial;
 
 function mostrarErrores(errores) {
   const lista = $('#receta-errores');
@@ -116,35 +114,67 @@ async function guardar(evento, app) {
   evento.preventDefault();
   mostrarErrores([]);
   const listo = ocupado($('#receta-guardar'), 'Guardando…');
+  const datosForm = leerFormulario();
+  const autor = app.config.nombre;
   try {
-    const { datos, receta } = await crearReceta(app.cliente, leerFormulario(), app.config.nombre);
+    let resultado;
+    if (base === null) {
+      resultado = await crearReceta(app.cliente, datosForm, autor);
+    } else {
+      try {
+        resultado = await editarReceta(app.cliente, datosForm, autor, { base });
+      } catch (e) {
+        if (!(e instanceof RecetaCambiadaError)) throw e;
+        const cuando = fechaLegible(e.actual.modificada);
+        if (!confirm(`Otra persona ha cambiado esta receta (${cuando}) mientras la editabas.\n\nAceptar: guardar tus cambios encima de los suyos.\nCancelar: seguir editando sin guardar.`)) {
+          mostrarErrores(['No se ha guardado: otra persona cambió la receta. Puedes guardar encima o cancelar y abrirla de nuevo para ver sus cambios.']);
+          return;
+        }
+        resultado = await editarReceta(app.cliente, datosForm, autor, { base, forzar: true });
+      }
+    }
     borrador = null;
     dialogo().close();
-    alGuardar(datos, receta);
+    alGuardar(resultado.datos, resultado.receta);
   } catch (e) {
-    mostrarErrores(e instanceof RecetaInvalidaError ? e.errores : [`${e.message} La receta sigue aquí; prueba a guardar de nuevo.`]);
+    mostrarErrores(e instanceof RecetaInvalidaError ? e.errores : [`${e.message} Lo escrito sigue aquí; prueba a guardar de nuevo.`]);
   } finally {
     listo();
   }
 }
 
 function cerrar() {
-  if (hayCambios() && !confirm('¿Descartar esta receta? Lo escrito se perderá.')) return;
+  if (hayCambios() && !confirm(base === null ? '¿Descartar esta receta? Lo escrito se perderá.' : '¿Descartar los cambios?')) return;
   borrador = null;
   dialogo().close();
 }
 
-export function abrirNuevaReceta() {
-  borrador = nuevaReceta();
+function abrir(receta, esNueva) {
+  borrador = receta;
+  base = esNueva ? null : receta.modificada;
   const f = formulario();
   f.reset();
-  f.raciones.value = borrador.raciones;
-  $('#receta-ingredientes').replaceChildren(filaIngrediente());
-  $('#receta-pasos').replaceChildren(filaPaso());
+  $('#receta-titulo-dialogo').textContent = esNueva ? 'Nueva receta' : 'Editar receta';
+  f.titulo.value = receta.titulo;
+  f.categorias.value = receta.categorias.join(', ');
+  f.etiquetas.value = receta.etiquetas.join(', ');
+  f.raciones.value = receta.raciones;
+  f.tiempo.value = receta.tiempo ?? '';
+  f.dificultad.value = receta.dificultad ?? '';
+  const ingredientes = receta.ingredientes.map((i) => ({ ...i, cantidad: i.cantidad === null ? '' : String(i.cantidad).replace('.', ',') }));
+  $('#receta-ingredientes').replaceChildren(...(ingredientes.length ? ingredientes.map(filaIngrediente) : [filaIngrediente()]));
+  $('#receta-pasos').replaceChildren(...(receta.pasos.length ? receta.pasos.map(filaPaso) : [filaPaso()]));
   mostrarErrores([]);
+  inicial = JSON.stringify(leerFormulario());
   dialogo().showModal();
-  f.titulo.focus();
+  dialogo().scrollTo(0, 0);
+  if (esNueva) f.titulo.focus();
 }
+
+export const abrirNuevaReceta = () => abrir(nuevaReceta(), true);
+
+/** Abre el formulario con una receta existente; se guarda con detección de cambios de otros. */
+export const abrirEditarReceta = (receta) => abrir(structuredClone(receta), false);
 
 /** Conecta el formulario una vez. `onGuardada(datos, receta)` recibe recetas.json tal como queda en GitHub. */
 export function prepararFormularioReceta(app, onGuardada) {

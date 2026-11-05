@@ -1,4 +1,4 @@
-// Operaciones sobre recetas.json: alta de recetas con guardado seguro ante cambios simultáneos.
+// Operaciones sobre recetas.json: alta, cambios y borrado, con guardado seguro ante cambios simultáneos.
 
 import { normalizarReceta, validarReceta } from './receta.js';
 import { limpiar } from './texto.js';
@@ -44,3 +44,61 @@ export async function crearReceta(cliente, borrador, autor, ahora = new Date()) 
   );
   return { datos, receta };
 }
+
+export class RecetaBorradaError extends Error {
+  constructor() {
+    super('Esta receta se ha borrado desde otro dispositivo mientras la editabas.');
+    this.name = 'RecetaBorradaError';
+  }
+}
+
+export class RecetaCambiadaError extends Error {
+  constructor(actual) {
+    super('Otra persona ha cambiado esta receta mientras la editabas.');
+    this.name = 'RecetaCambiadaError';
+    this.actual = actual;
+  }
+}
+
+/**
+ * Guarda los cambios de una receta existente. `base` es la fecha `modificada` de la versión que se
+ * empezó a editar: si en GitHub ya hay otra (alguien la cambió entretanto) lanza RecetaCambiadaError,
+ * salvo con `forzar`, que guarda encima. Si la receta ya no está, lanza RecetaBorradaError.
+ */
+export async function editarReceta(cliente, borrador, autor, { base, forzar = false } = {}, ahora = new Date()) {
+  const receta = prepararReceta(borrador, ahora);
+  const { datos } = await cliente.actualizar(
+    FICHERO,
+    (actual) => {
+      const i = actual.items.findIndex((r) => r.id === receta.id);
+      if (i < 0) throw new RecetaBorradaError();
+      const enGitHub = actual.items[i];
+      if (enGitHub.modificada === receta.modificada) return null; // Un reintento tras una escritura que sí entró.
+      if (!forzar && enGitHub.modificada !== base) throw new RecetaCambiadaError(enGitHub);
+      const items = [...actual.items];
+      items[i] = receta;
+      return { ...actual, items };
+    },
+    `Cambios: ${receta.titulo} (por ${autor})`,
+  );
+  return { datos, receta };
+}
+
+/** Quita una receta de recetas.json y después su foto, si tiene. Si ya no estaba, no hace nada. */
+export async function borrarReceta(cliente, receta, autor) {
+  const { datos } = await cliente.actualizar(
+    FICHERO,
+    (actual) => (actual.items.some((r) => r.id === receta.id) ? { ...actual, items: actual.items.filter((r) => r.id !== receta.id) } : null),
+    `Borrada: ${receta.titulo} (por ${autor})`,
+  );
+  // La foto va después: si esto falla, solo queda un archivo suelto, nunca una receta sin su foto.
+  if (receta.foto) {
+    try {
+      await cliente.borrarArchivo(receta.foto, `Foto borrada: ${receta.titulo} (por ${autor})`);
+    } catch {
+      // Se puede borrar a mano en el repo; la receta ya no está.
+    }
+  }
+  return { datos };
+}
+

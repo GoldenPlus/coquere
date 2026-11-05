@@ -208,7 +208,9 @@ legend { font-weight: 600; padding: 0 0.3rem; }
 }
 
 /* Ficha de receta: letra grande para leer mientras se cocina */
-.volver { margin: 0.5rem 0 0.25rem; padding: 0.4em 0.9em; }
+.barra-ficha { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0 0.25rem; }
+.barra-ficha button { padding: 0.4em 0.9em; }
+.borrar-receta { justify-content: center; margin: 2rem 0 1rem; }
 .ficha { font-size: 1.15rem; line-height: 1.5; }
 .ficha h2 { font-size: 1.6rem; line-height: 1.2; margin: 0.6rem 0 0.3rem; overflow-wrap: anywhere; }
 .estrellas.grande { font-size: 1.2rem; margin: 0 0 0.4rem; }
