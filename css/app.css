@@ -137,3 +137,60 @@ dialog h2 { margin: 0 0 0.25rem; font-size: 1.2rem; }
   max-width: calc(100vw - 2rem);
 }
 .aviso.visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* Botón flotante */
+.flotante {
+  position: fixed;
+  right: 1rem;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 5;
+  padding: 0.85em 1.3em;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+}
+
+/* Diálogo grande (receta): pantalla completa en el móvil */
+dialog.grande { width: min(44rem, calc(100vw - 2rem)); }
+@media (max-width: 40rem) {
+  dialog.grande {
+    width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0;
+    padding: max(1rem, env(safe-area-inset-top)) 1rem 0;
+  }
+}
+.tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+fieldset { border: 1px solid var(--borde); border-radius: var(--radio); padding: 0.5rem 0.75rem 0.75rem; margin: 0; min-width: 0; }
+legend { font-weight: 600; padding: 0 0.3rem; }
+.filas { list-style: none; margin: 0 0 0.5rem; padding: 0; display: grid; gap: 0.5rem; }
+.fila-ingrediente {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 7.5rem) minmax(0, 1fr) auto;
+  grid-template-areas: "cant uni nombre quitar" "cant uni detalle quitar";
+  gap: 0.35rem;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--borde);
+}
+.fila-ingrediente:last-child { border-bottom: 0; padding-bottom: 0; }
+.ing-cantidad { grid-area: cant; }
+.ing-unidad { grid-area: uni; padding-inline: 0.4em; }
+.ing-nombre { grid-area: nombre; }
+.ing-detalle { grid-area: detalle; font-size: 0.9rem; }
+.fila-ingrediente .quitar { grid-area: quitar; }
+@media (max-width: 30rem) {
+  .fila-ingrediente {
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+    grid-template-areas: "cant uni quitar" "nombre nombre nombre" "detalle detalle detalle";
+  }
+}
+.pasos { counter-reset: paso; }
+.fila-paso { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) auto; gap: 0.35rem; align-items: start; counter-increment: paso; }
+.fila-paso::before { content: counter(paso) "."; padding-top: 0.55em; color: var(--suave); text-align: right; }
+.fila-paso textarea { resize: vertical; }
+.mover { display: flex; }
+.mover .icono, .quitar { font-size: 1.05rem; padding: 0.3em 0.45em; }
+.quitar { color: var(--suave); }
+.errores { padding: 0.6rem 0.75rem 0.6rem 1.8rem; border: 1px solid currentColor; border-radius: 8px; }
+.pie {
+  position: sticky; bottom: 0; background: var(--superficie);
+  padding: 0.75rem 0 max(0.75rem, env(safe-area-inset-bottom)); margin-top: 0; border-top: 1px solid var(--borde);
+}

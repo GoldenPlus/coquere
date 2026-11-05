@@ -8,21 +8,23 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wkUCdBympPYqi3PdD9w00gK3rn5Zdyg0Jn1ryJ6LiOA='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=acc167141d">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-v6X6OPtJm8vlzyDsQO4nWFeD5SWxEVq6EuHvQxGJCjk='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=f03f74ebe9">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=db73d54f84",
       "./js/config.js": "./js/config.js?v=640e00eb72",
       "./js/dom.js": "./js/dom.js?v=749c587cc2",
       "./js/estado.js": "./js/estado.js?v=941b583a8f",
+      "./js/formulario-receta.js": "./js/formulario-receta.js?v=311c0b75d8",
       "./js/github.js": "./js/github.js?v=e2692930d9",
-      "./js/main.js": "./js/main.js?v=a31258d944",
+      "./js/main.js": "./js/main.js?v=9a4d7e01ca",
       "./js/receta.js": "./js/receta.js?v=cf59f461bd",
+      "./js/recetas.js": "./js/recetas.js?v=462eefc735",
       "./js/texto.js": "./js/texto.js?v=847e5e4645"
   } }
   </script>
-  <script type="module" src="js/main.js?v=a31258d944"></script>
+  <script type="module" src="js/main.js?v=9a4d7e01ca"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -44,11 +46,64 @@
         <dt>Recetas</dt><dd id="conexion-recetas"></dd>
         <dt>Actualizado</dt><dd id="conexion-fecha"></dd>
       </dl>
-      <p class="ayuda">Aquí aparecerá el recetario.</p>
     </section>
   </main>
 
+  <button id="btn-nueva" class="flotante" type="button" hidden>＋ Nueva receta</button>
+
   <div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+
+  <!-- Receta nueva -->
+  <dialog id="dlg-receta" class="grande">
+    <form id="form-receta" class="formulario" novalidate>
+      <h2>Nueva receta</h2>
+      <ul id="receta-errores" class="error errores" role="alert"></ul>
+      <label>Título
+        <input name="titulo" required autocapitalize="sentences">
+      </label>
+      <label><span>Categorías <span class="opcional">(separadas por comas)</span></span>
+        <input name="categorias" placeholder="Segundos, Cenas" autocapitalize="sentences">
+      </label>
+      <label><span>Etiquetas <span class="opcional">(separadas por comas)</span></span>
+        <input name="etiquetas" placeholder="vegetariana, rápida" autocapitalize="off">
+      </label>
+      <div class="tres">
+        <label>Raciones
+          <input name="raciones" type="number" min="1" step="1" inputmode="numeric" required>
+        </label>
+        <label><span>Tiempo <span class="opcional">(min)</span></span>
+          <input name="tiempo" type="number" min="0" step="1" inputmode="numeric">
+        </label>
+        <label>Dificultad
+          <select name="dificultad">
+            <option value="">—</option>
+            <option value="1">1 · Muy fácil</option>
+            <option value="2">2 · Fácil</option>
+            <option value="3">3 · Media</option>
+            <option value="4">4 · Difícil</option>
+            <option value="5">5 · Muy difícil</option>
+          </select>
+        </label>
+      </div>
+
+      <fieldset>
+        <legend>Ingredientes</legend>
+        <ul id="receta-ingredientes" class="filas"></ul>
+        <button id="receta-anadir-ingrediente" type="button" class="secundario">＋ Ingrediente</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pasos</legend>
+        <ol id="receta-pasos" class="filas pasos"></ol>
+        <button id="receta-anadir-paso" type="button" class="secundario">＋ Paso</button>
+      </fieldset>
+
+      <div class="botones pie">
+        <button id="receta-cancelar" type="button" class="secundario">Cancelar</button>
+        <button id="receta-guardar" type="submit">Guardar</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- Ajustes -->
   <dialog id="dlg-ajustes">

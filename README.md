@@ -14,8 +14,9 @@ npm run versionar  # tras cambiar CSS o JS: actualiza marcas de versión y CSP e
 
 | Fichero | Contenido |
 | --- | --- |
-| `js/main.js` | Interfaz: estado de la conexión, ajustes y arranque |
+| `js/main.js` | Interfaz: estado de la conexión, ajustes, alta de recetas y arranque |
 | `js/github.js` | Contents API: leer con `sha`, escribir y reintentar ante conflicto, archivos |
+| `js/recetas.js`, `js/formulario-receta.js` | Alta de recetas en `recetas.json` y su formulario |
 | `js/receta.js` | Modelo de receta: unidades, normalización y validación |
 | `js/almacen.js` | Datos en memoria y copia en `localStorage` |
 | `js/config.js` | Ajustes del dispositivo (nombre, repo, token) |

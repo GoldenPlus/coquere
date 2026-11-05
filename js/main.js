@@ -1,4 +1,4 @@
-// Interfaz: estado de la conexión, ajustes y arranque.
+// Interfaz: estado de la conexión, ajustes, alta de recetas y arranque.
 
 import { guardarConfig, borrarConfig, normalizarRepo } from './config.js';
 import { crearCliente } from './github.js';
@@ -6,6 +6,7 @@ import { crearAlmacen } from './almacen.js';
 import { limpiar } from './texto.js';
 import { app } from './estado.js';
 import { $, aviso, fechaLegible, ocupado } from './dom.js';
+import { abrirNuevaReceta, prepararFormularioReceta } from './formulario-receta.js';
 
 function mostrarEstado(texto, esError = false) {
   const nodo = $('#estado');
@@ -16,6 +17,7 @@ function mostrarEstado(texto, esError = false) {
 function render() {
   const conectado = Boolean(app.cliente && app.almacen.fecha);
   $('#conexion').hidden = !conectado;
+  $('#btn-nueva').hidden = !conectado;
   if (!conectado) return;
   const n = app.almacen.items('recetas').length;
   $('#conexion-repo').textContent = app.config.repo;
@@ -95,11 +97,21 @@ function olvidarDispositivo() {
   abrirAjustes();
 }
 
+// ---------- Recetas
+
+function recetaGuardada(datos, receta) {
+  app.almacen.fijar('recetas', datos);
+  render();
+  aviso(`Guardada: ${receta.titulo}`);
+}
+
 // ---------- Arranque
 
 function iniciar() {
   $('#btn-recargar').addEventListener('click', recargar);
   $('#btn-ajustes').addEventListener('click', abrirAjustes);
+  $('#btn-nueva').addEventListener('click', abrirNuevaReceta);
+  prepararFormularioReceta(app, recetaGuardada);
   $('#form-ajustes').addEventListener('submit', guardarAjustes);
   $('#ajustes-cancelar').addEventListener('click', () => $('#dlg-ajustes').close());
   $('#ajustes-olvidar').addEventListener('click', olvidarDispositivo);
