@@ -8,8 +8,8 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-v6X6OPtJm8vlzyDsQO4nWFeD5SWxEVq6EuHvQxGJCjk='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=f03f74ebe9">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-HFe8asMggWxaoJSEKqO93loX47OOu2EOMgx90xFftWA='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=1b269c4620">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=db73d54f84",
@@ -18,13 +18,14 @@
       "./js/estado.js": "./js/estado.js?v=941b583a8f",
       "./js/formulario-receta.js": "./js/formulario-receta.js?v=311c0b75d8",
       "./js/github.js": "./js/github.js?v=e2692930d9",
-      "./js/main.js": "./js/main.js?v=9a4d7e01ca",
+      "./js/listado.js": "./js/listado.js?v=cdd5ee0649",
+      "./js/main.js": "./js/main.js?v=80c3e24470",
       "./js/receta.js": "./js/receta.js?v=cf59f461bd",
       "./js/recetas.js": "./js/recetas.js?v=462eefc735",
       "./js/texto.js": "./js/texto.js?v=847e5e4645"
   } }
   </script>
-  <script type="module" src="js/main.js?v=9a4d7e01ca"></script>
+  <script type="module" src="js/main.js?v=80c3e24470"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -38,14 +39,9 @@
 
   <main>
     <p id="estado" class="estado" role="status"></p>
-    <section id="conexion" class="tarjeta-conexion" hidden>
-      <p class="conectado">● Conectado</p>
-      <dl>
-        <dt>Repositorio</dt><dd id="conexion-repo"></dd>
-        <dt>En este dispositivo</dt><dd id="conexion-nombre"></dd>
-        <dt>Recetas</dt><dd id="conexion-recetas"></dd>
-        <dt>Actualizado</dt><dd id="conexion-fecha"></dd>
-      </dl>
+    <section id="recetario" hidden>
+      <p class="resumen"><span id="resumen-recetas"></span> · <span id="resumen-fecha"></span></p>
+      <div id="listado"></div>
     </section>
   </main>
 
@@ -109,6 +105,11 @@
   <dialog id="dlg-ajustes">
     <form id="form-ajustes" class="formulario">
       <h2>Ajustes</h2>
+      <dl id="conexion" class="tarjeta-conexion" hidden>
+        <dt>Estado</dt><dd class="conectado">● Conectado</dd>
+        <dt>Repositorio</dt><dd id="conexion-repo"></dd>
+        <dt>Actualizado</dt><dd id="conexion-fecha"></dd>
+      </dl>
       <p class="ayuda">Se guardan solo en este dispositivo. Usa un token propio para cada dispositivo: si pierdes uno, revocas solo ese.</p>
       <label>Tu nombre
         <input name="nombre" required autocomplete="given-name">

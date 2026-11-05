@@ -1,4 +1,4 @@
-// Interfaz: estado de la conexión, ajustes, alta de recetas y arranque.
+// Interfaz: listado de recetas, estado de la conexión, ajustes, alta de recetas y arranque.
 
 import { guardarConfig, borrarConfig, normalizarRepo } from './config.js';
 import { crearCliente } from './github.js';
@@ -7,6 +7,7 @@ import { limpiar } from './texto.js';
 import { app } from './estado.js';
 import { $, aviso, fechaLegible, ocupado } from './dom.js';
 import { abrirNuevaReceta, prepararFormularioReceta } from './formulario-receta.js';
+import { pintarListado } from './listado.js';
 
 function mostrarEstado(texto, esError = false) {
   const nodo = $('#estado');
@@ -15,15 +16,16 @@ function mostrarEstado(texto, esError = false) {
 }
 
 function render() {
-  const conectado = Boolean(app.cliente && app.almacen.fecha);
-  $('#conexion').hidden = !conectado;
-  $('#btn-nueva').hidden = !conectado;
-  if (!conectado) return;
-  const n = app.almacen.items('recetas').length;
-  $('#conexion-repo').textContent = app.config.repo;
-  $('#conexion-nombre').textContent = app.config.nombre;
-  $('#conexion-recetas').textContent = n === 1 ? '1 receta' : `${n} recetas`;
-  $('#conexion-fecha').textContent = fechaLegible(app.almacen.fecha);
+  // Con copia local se muestra al instante, aunque aún no haya respuesta de GitHub.
+  const hayDatos = Boolean(app.cliente && app.almacen.fecha);
+  $('#recetario').hidden = !hayDatos;
+  $('#btn-nueva').hidden = !hayDatos;
+  if (!hayDatos) return;
+  const recetas = app.almacen.items('recetas');
+  const fecha = fechaLegible(app.almacen.fecha);
+  $('#resumen-recetas').textContent = recetas.length === 1 ? '1 receta' : `${recetas.length} recetas`;
+  $('#resumen-fecha').textContent = `actualizado ${fecha}`;
+  pintarListado($('#listado'), recetas);
 }
 
 async function recargar() {
@@ -53,6 +55,9 @@ function abrirAjustes() {
   const f = $('#form-ajustes');
   for (const campo of ['nombre', 'repo', 'token']) f[campo].value = app.config[campo];
   $('#ajustes-error').textContent = '';
+  $('#conexion').hidden = !(app.cliente && app.almacen.fecha);
+  $('#conexion-repo').textContent = app.config.repo;
+  $('#conexion-fecha').textContent = fechaLegible(app.almacen.fecha);
   $('#ajustes-cancelar').hidden = !app.cliente;
   $('#ajustes-olvidar').hidden = !app.cliente;
   $('#dlg-ajustes').showModal();
