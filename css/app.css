@@ -179,7 +179,7 @@ legend { font-weight: 600; padding: 0 0.3rem; }
 .fila-ingrediente {
   display: grid;
   grid-template-columns: 4.5rem minmax(0, 7.5rem) minmax(0, 1fr) auto;
-  grid-template-areas: "cant uni nombre quitar" "cant uni detalle quitar";
+  grid-template-areas: "cant uni nombre quitar" "cant uni sug quitar" "cant uni detalle quitar";
   gap: 0.35rem;
   align-items: center;
   padding-bottom: 0.5rem;
@@ -194,7 +194,7 @@ legend { font-weight: 600; padding: 0 0.3rem; }
 @media (max-width: 30rem) {
   .fila-ingrediente {
     grid-template-columns: 4.5rem minmax(0, 1fr) auto;
-    grid-template-areas: "cant uni quitar" "nombre nombre nombre" "detalle detalle detalle";
+    grid-template-areas: "cant uni quitar" "nombre nombre nombre" "sug sug sug" "detalle detalle detalle";
   }
 }
 .pasos { counter-reset: paso; }
@@ -269,3 +269,10 @@ label.boton:focus-within { outline: 2px solid var(--acento); }
 .ficha-filtro { background: transparent; color: var(--texto); border: 1px solid var(--borde); padding: 0.35em 0.85em; font-size: 0.9rem; }
 .ficha-filtro.activa { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); }
 button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(--acento); text-decoration: underline; font-size: inherit; }
+
+/* Sugerencias de ingredientes */
+.sugerencias { grid-area: sug; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+.sugerencias:empty { display: none; }
+.sugerencias .ayuda { font-size: 0.8rem; }
+.sugerencia { background: transparent; color: var(--texto); border: 1px solid var(--borde); padding: 0.25em 0.75em; font-size: 0.9rem; }
+.sugerencia.mismo { border-color: var(--acento); color: var(--acento); font-weight: 600; }

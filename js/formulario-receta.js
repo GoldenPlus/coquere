@@ -3,6 +3,7 @@
 import { UNIDADES, nuevaReceta } from './receta.js';
 import { crearReceta, editarReceta, prepararReceta, textoALista, RecetaInvalidaError, RecetaCambiadaError } from './recetas.js';
 import { reducirFoto, subirFoto, borrarFoto, mostrarFoto } from './fotos.js';
+import { indiceIngredientes, sugerirIngredientes } from './ingredientes.js';
 import { $, el, ocupado, fechaLegible } from './dom.js';
 
 const dialogo = () => $('#dlg-receta');
@@ -16,6 +17,8 @@ let inicial = '';
 let fotoNueva = null;
 let fotoQuitada = false;
 let appActual = null;
+/** Ingredientes ya usados en las demás recetas, para sugerirlos. */
+let indice = [];
 let alGuardar = () => {};
 
 // ---------- Ingredientes
@@ -24,6 +27,43 @@ function opcionesUnidad(seleccionada) {
   return Object.entries(UNIDADES).map(([clave, u]) =>
     el('option', { value: clave, selected: clave === seleccionada }, u.nombre === clave ? clave : `${clave} (${u.nombre})`),
   );
+}
+
+/**
+ * Nombre del ingrediente con sugerencias debajo. Mientras escribes: nombres ya usados que encajan.
+ * Al salir del campo solo queda, si lo hay, el mismo ingrediente escrito de otra forma («tomates» → «tomate»).
+ */
+function campoNombre(valor) {
+  const input = el('input', { class: 'ing-nombre', placeholder: 'Ingrediente', 'aria-label': 'Ingrediente', value: valor, autocomplete: 'off' });
+  const caja = el('div', { class: 'sugerencias', 'aria-live': 'polite' });
+  const usar = (nombre) => {
+    input.value = nombre;
+    caja.replaceChildren();
+  };
+  const pintar = (soloMismo) => {
+    let lista = sugerirIngredientes(indice, input.value);
+    if (soloMismo) lista = lista.filter((s) => s.mismo);
+    if (!lista.length) return caja.replaceChildren();
+    caja.replaceChildren(
+      el('span', { class: 'ayuda' }, soloMismo ? 'Ya usas:' : 'Usados:'),
+      ...lista.map((s) =>
+        el('button', {
+          type: 'button',
+          class: `sugerencia${s.mismo ? ' mismo' : ''}`,
+          title: s.mismo ? 'Es el mismo ingrediente: usa el mismo nombre para que la lista de la compra lo sume' : '',
+          // Sin quitar el foco del campo, para que el toque no cuente como «salir».
+          onpointerdown: (e) => e.preventDefault(),
+          onclick: () => usar(s.nombre),
+        }, s.nombre),
+      ),
+    );
+  };
+  input.addEventListener('input', () => pintar(false));
+  input.addEventListener('focus', () => pintar(false));
+  input.addEventListener('blur', () => pintar(true));
+  // Con un nombre ya puesto (al editar), avisar desde el principio si hay otra forma más usada.
+  if (valor) queueMicrotask(() => pintar(true));
+  return [input, caja];
 }
 
 function filaIngrediente(i = { cantidad: '', unidad: 'g', nombre: '', detalle: '' }) {
@@ -41,7 +81,7 @@ function filaIngrediente(i = { cantidad: '', unidad: 'g', nombre: '', detalle: '
     { class: 'fila-ingrediente' },
     cantidad,
     unidad,
-    el('input', { class: 'ing-nombre', placeholder: 'Ingrediente', 'aria-label': 'Ingrediente', value: i.nombre }),
+    campoNombre(i.nombre),
     el('input', { class: 'ing-detalle', placeholder: 'Detalle (opcional)', 'aria-label': 'Detalle', value: i.detalle }),
     el('button', { type: 'button', class: 'icono quitar', title: 'Quitar ingrediente', 'aria-label': 'Quitar ingrediente', onclick: () => quitar(fila) }, '✕'),
   );
@@ -218,6 +258,7 @@ function cerrar() {
 function abrir(receta, esNueva) {
   borrador = receta;
   base = esNueva ? null : receta.modificada;
+  indice = indiceIngredientes(appActual.almacen.items('recetas'), receta.id);
   const f = formulario();
   f.reset();
   $('#receta-titulo-dialogo').textContent = esNueva ? 'Nueva receta' : 'Editar receta';
