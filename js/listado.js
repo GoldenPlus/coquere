@@ -2,6 +2,7 @@
 
 import { compararTitulos } from './texto.js';
 import { el } from './dom.js';
+import { rutaMini } from './fotos.js';
 
 export const NOMBRES_DIFICULTAD = { 1: 'Muy fácil', 2: 'Fácil', 3: 'Media', 4: 'Difícil', 5: 'Muy difícil' };
 
@@ -32,10 +33,16 @@ export function filasListado(recetas) {
       dificultad: NOMBRES_DIFICULTAD[r.dificultad] ?? '',
       estrellas: estrellas(r.puntuacion),
       puntuacion: r.puntuacion,
+      foto: r.foto ?? null,
     }));
 }
 
-function tarjeta(f) {
+function tarjeta(f, verFoto) {
+  let mini = el('span', { class: 'miniatura vacia', 'aria-hidden': 'true' }, '🍽');
+  if (f.foto && verFoto) {
+    mini = el('img', { class: 'miniatura', alt: '', loading: 'lazy' });
+    verFoto(mini, rutaMini(f.foto));
+  }
   const datos = [f.tiempo && `⏱ ${f.tiempo}`, f.dificultad].filter(Boolean).join(' · ');
   const cabeza = el(
     'div',
@@ -45,15 +52,15 @@ function tarjeta(f) {
   );
   const resumen = (f.categoria || datos) &&
     el('p', { class: 'receta-datos' }, f.categoria && el('span', { class: 'categoria' }, f.categoria), datos && el('span', {}, datos));
-  return el('li', { class: 'receta' }, el('a', { href: `#receta/${encodeURIComponent(f.id)}`, class: 'receta-enlace' }, cabeza, resumen));
+  return el('li', { class: 'receta' }, el('a', { href: `#receta/${encodeURIComponent(f.id)}`, class: 'receta-enlace' }, mini, el('div', { class: 'receta-texto' }, cabeza, resumen)));
 }
 
-/** Pinta el listado en `contenedor`; sin recetas, una invitación a crear la primera. */
-export function pintarListado(contenedor, recetas) {
+/** Pinta el listado en `contenedor`; sin recetas, una invitación a crear la primera. `verFoto(img, ruta)` carga miniaturas. */
+export function pintarListado(contenedor, recetas, verFoto) {
   const filas = filasListado(recetas);
   contenedor.replaceChildren(
     filas.length
-      ? el('ul', { class: 'lista-recetas' }, filas.map(tarjeta))
+      ? el('ul', { class: 'lista-recetas' }, filas.map((f) => tarjeta(f, verFoto)))
       : el('p', { class: 'vacio' }, 'Aún no hay recetas. Pulsa «＋ Nueva receta» para crear la primera.'),
   );
 }

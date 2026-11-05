@@ -137,13 +137,14 @@ test('editar una receta que otro dispositivo ha borrado lo dice y no la recrea',
   assert.deepEqual(gh.datos.items, []);
 });
 
-test('borrar quita la receta y su foto; si ya no estaba, no escribe nada', async () => {
+test('borrar quita la receta y su foto con miniatura (la de GitHub); si ya no estaba, no escribe nada', async () => {
   const a = guardada('Gazpacho');
-  const b = { ...guardada('Lentejas'), foto: 'fotos/lentejas.jpg' };
-  const gh = github({ items: [a, b] });
+  const b = { ...guardada('Lentejas'), foto: 'fotos/vieja.jpg' };
+  // Otro dispositivo le cambió la foto: se borra la que hay en GitHub, no la de la copia local.
+  const gh = github({ items: [a, { ...b, foto: 'fotos/lentejas.jpg' }] });
   const { datos } = await borrarReceta(gh.cliente, b, 'Ana');
   assert.deepEqual(datos.items.map((r) => r.titulo), ['Gazpacho']);
-  assert.deepEqual(gh.borrados, ['fotos/lentejas.jpg']);
+  assert.deepEqual(gh.borrados, ['fotos/lentejas.jpg', 'fotos/lentejas.mini.jpg']);
   await borrarReceta(gh.cliente, b, 'Ana');
   assert.deepEqual(gh.mensajes, ['Borrada: Lentejas (por Ana)']);
 });
@@ -187,4 +188,19 @@ test('anotar en una receta borrada o con nota vacía da un error claro', async (
   await assert.rejects(anadirNota(github({ items: [guardada('Otra')] }).cliente, r, 'hola', 'Ana'), RecetaBorradaError);
   await assert.rejects(anadirNota(github({ items: [r] }).cliente, r, '   ', 'Ana'), RecetaInvalidaError);
   await assert.rejects(puntuarReceta(github({ items: [r] }).cliente, r, 7, 'Ana'), /La puntuación va de 1 a 5/);
+});
+
+test('editar sin tocar la foto conserva la de GitHub; cambiarla devuelve la anterior para borrarla', async () => {
+  const r = { ...guardada('Lentejas'), foto: 'fotos/a.jpg' };
+  // Otro dispositivo puso otra foto y el formulario aún tiene la vieja: sin fotoCambiada se respeta la de GitHub.
+  const gh = github({ items: [{ ...r, foto: 'fotos/b.jpg' }] });
+  const sinCambio = await editarReceta(gh.cliente, { ...r, raciones: '2' }, 'Ana', { base: r.modificada });
+  assert.equal(sinCambio.receta.foto, 'fotos/b.jpg');
+  assert.equal(sinCambio.fotoAnterior, null);
+  const nueva = await editarReceta(gh.cliente, { ...sinCambio.receta, foto: 'fotos/c.jpg' }, 'Ana', { base: sinCambio.receta.modificada, fotoCambiada: true });
+  assert.equal(nueva.receta.foto, 'fotos/c.jpg');
+  assert.equal(nueva.fotoAnterior, 'fotos/b.jpg');
+  const quitada = await editarReceta(gh.cliente, { ...nueva.receta, foto: null }, 'Ana', { base: nueva.receta.modificada, fotoCambiada: true });
+  assert.equal(quitada.receta.foto, null);
+  assert.equal(quitada.fotoAnterior, 'fotos/c.jpg');
 });

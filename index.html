@@ -8,25 +8,26 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-Ru+ZBbX7hjWmyE+/2DOjGK1PPcXRLF2oPigltNrKYj4='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=baf07f5068">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-30Oh5hwdVEJ6c4vSPQj/dhrt0Ivr35fxjvamLM3Wh5Q='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=1e685968b3">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=db73d54f84",
       "./js/config.js": "./js/config.js?v=640e00eb72",
       "./js/dom.js": "./js/dom.js?v=749c587cc2",
       "./js/estado.js": "./js/estado.js?v=941b583a8f",
-      "./js/ficha.js": "./js/ficha.js?v=9798d7c0a0",
-      "./js/formulario-receta.js": "./js/formulario-receta.js?v=e993f32458",
+      "./js/ficha.js": "./js/ficha.js?v=3172f08697",
+      "./js/formulario-receta.js": "./js/formulario-receta.js?v=87a2508610",
+      "./js/fotos.js": "./js/fotos.js?v=a3917a6171",
       "./js/github.js": "./js/github.js?v=e2692930d9",
-      "./js/listado.js": "./js/listado.js?v=d77772fe18",
-      "./js/main.js": "./js/main.js?v=fb033d0520",
+      "./js/listado.js": "./js/listado.js?v=f991ec5e74",
+      "./js/main.js": "./js/main.js?v=a242d53d2d",
       "./js/receta.js": "./js/receta.js?v=cf59f461bd",
-      "./js/recetas.js": "./js/recetas.js?v=fa81ec9a3c",
+      "./js/recetas.js": "./js/recetas.js?v=89fc9e0555",
       "./js/texto.js": "./js/texto.js?v=847e5e4645"
   } }
   </script>
-  <script type="module" src="js/main.js?v=fb033d0520"></script>
+  <script type="module" src="js/main.js?v=a242d53d2d"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -74,6 +75,18 @@
       <label><span>Etiquetas <span class="opcional">(separadas por comas)</span></span>
         <input name="etiquetas" placeholder="vegetariana, rápida" autocapitalize="off">
       </label>
+      <fieldset class="campo-foto">
+        <legend>Foto <span class="opcional">(opcional)</span></legend>
+        <img id="receta-foto-vista" class="vista-foto" alt="Foto de la receta" hidden>
+        <p id="receta-foto-estado" class="ayuda" role="status"></p>
+        <div class="botones izquierda">
+          <label class="boton secundario">
+            <span id="receta-foto-elegir-texto">📷 Añadir foto</span>
+            <input id="receta-foto-archivo" type="file" accept="image/*" hidden>
+          </label>
+          <button id="receta-foto-quitar" type="button" class="secundario" hidden>Quitar foto</button>
+        </div>
+      </fieldset>
       <div class="tres">
         <label>Raciones
           <input name="raciones" type="number" min="1" step="1" inputmode="numeric" required>

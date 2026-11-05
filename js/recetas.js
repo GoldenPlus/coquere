@@ -2,6 +2,7 @@
 
 import { normalizarReceta, validarReceta } from './receta.js';
 import { limpiar } from './texto.js';
+import { borrarFoto } from './fotos.js';
 
 export const FICHERO = 'recetas.json';
 
@@ -64,25 +65,32 @@ export class RecetaCambiadaError extends Error {
  * Guarda los cambios de una receta existente. `base` es la fecha `modificada` de la versión que se
  * empezó a editar: si en GitHub ya hay otra (alguien la cambió entretanto) lanza RecetaCambiadaError,
  * salvo con `forzar`, que guarda encima. Si la receta ya no está, lanza RecetaBorradaError.
+ * La foto solo se toma del borrador con `fotoCambiada`; si no, se deja la que haya en GitHub.
+ * Devuelve también `fotoAnterior`: la foto que había y que ya no se usa (para borrarla), o null.
  */
-export async function editarReceta(cliente, borrador, autor, { base, forzar = false } = {}, ahora = new Date()) {
+export async function editarReceta(cliente, borrador, autor, { base, forzar = false, fotoCambiada = false } = {}, ahora = new Date()) {
   const receta = prepararReceta(borrador, ahora);
+  let fotoAnterior = null;
   const { datos } = await cliente.actualizar(
     FICHERO,
     (actual) => {
       const i = actual.items.findIndex((r) => r.id === receta.id);
       if (i < 0) throw new RecetaBorradaError();
       const enGitHub = actual.items[i];
-      if (enGitHub.modificada === receta.modificada) return null; // Un reintento tras una escritura que sí entró.
-      if (!forzar && enGitHub.modificada !== base) throw new RecetaCambiadaError(enGitHub);
       // Notas y puntuación no se editan en el formulario: se toman siempre de GitHub, así nunca se pierden.
+      const foto = fotoCambiada ? receta.foto : enGitHub.foto;
+      const nueva = { ...receta, notas: enGitHub.notas, puntuacion: enGitHub.puntuacion, foto };
+      // Un reintento tras una escritura que sí entró: ya está tal cual.
+      if (JSON.stringify(enGitHub) === JSON.stringify(nueva)) return null;
+      if (!forzar && enGitHub.modificada !== base) throw new RecetaCambiadaError(enGitHub);
+      fotoAnterior = enGitHub.foto && enGitHub.foto !== foto ? enGitHub.foto : null;
       const items = [...actual.items];
-      items[i] = { ...receta, notas: enGitHub.notas, puntuacion: enGitHub.puntuacion };
+      items[i] = nueva;
       return { ...actual, items };
     },
     `Cambios: ${receta.titulo} (por ${autor})`,
   );
-  return { datos, receta: datos.items.find((r) => r.id === receta.id) };
+  return { datos, receta: datos.items.find((r) => r.id === receta.id), fotoAnterior };
 }
 
 /**
@@ -131,21 +139,21 @@ export async function anadirNota(cliente, receta, texto, autor, ahora = new Date
   );
 }
 
-/** Quita una receta de recetas.json y después su foto, si tiene. Si ya no estaba, no hace nada. */
+/** Quita una receta de recetas.json y después su foto y miniatura, si tiene. Si ya no estaba, no hace nada. */
 export async function borrarReceta(cliente, receta, autor) {
+  let foto = null; // La de GitHub, por si otro dispositivo la cambió.
   const { datos } = await cliente.actualizar(
     FICHERO,
-    (actual) => (actual.items.some((r) => r.id === receta.id) ? { ...actual, items: actual.items.filter((r) => r.id !== receta.id) } : null),
+    (actual) => {
+      const enGitHub = actual.items.find((r) => r.id === receta.id);
+      if (!enGitHub) return null;
+      foto = enGitHub.foto;
+      return { ...actual, items: actual.items.filter((r) => r.id !== receta.id) };
+    },
     `Borrada: ${receta.titulo} (por ${autor})`,
   );
   // La foto va después: si esto falla, solo queda un archivo suelto, nunca una receta sin su foto.
-  if (receta.foto) {
-    try {
-      await cliente.borrarArchivo(receta.foto, `Foto borrada: ${receta.titulo} (por ${autor})`);
-    } catch {
-      // Se puede borrar a mano en el repo; la receta ya no está.
-    }
-  }
+  await borrarFoto(cliente, foto, receta.titulo, autor);
   return { datos };
 }
 

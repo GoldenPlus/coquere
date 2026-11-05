@@ -8,6 +8,7 @@ import { app } from './estado.js';
 import { $, el, aviso, fechaLegible, ocupado } from './dom.js';
 import { abrirNuevaReceta, abrirEditarReceta, prepararFormularioReceta } from './formulario-receta.js';
 import { borrarReceta, puntuarReceta, anadirNota } from './recetas.js';
+import { mostrarFoto } from './fotos.js';
 import { pintarListado } from './listado.js';
 import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './ficha.js';
 
@@ -24,6 +25,7 @@ function idEnDireccion() {
 }
 
 let scrollListado = 0;
+const verFoto = (img, ruta) => mostrarFoto(img, app.cliente, ruta);
 
 function render() {
   // Con copia local se muestra al instante, aunque aún no haya respuesta de GitHub.
@@ -39,7 +41,7 @@ function render() {
   if (enFicha) return pintarFicha(recetas.find((r) => r.id === id));
   $('#resumen-recetas').textContent = recetas.length === 1 ? '1 receta' : `${recetas.length} recetas`;
   $('#resumen-fecha').textContent = `actualizado ${fechaLegible(app.almacen.fecha)}`;
-  pintarListado($('#listado'), recetas);
+  pintarListado($('#listado'), recetas, verFoto);
 }
 
 let fichaPintada = null;
@@ -55,7 +57,7 @@ function pintarFicha(receta) {
   if (clave === fichaPintada && !$('#vista-ficha').hidden) return;
   fichaPintada = clave;
   $('#ficha').replaceChildren(
-    receta ? construirFicha(receta, { onPuntuar: puntuar, onNota: guardarNota }) : el('p', { class: 'vacio' }, 'No se encuentra esta receta. Puede que la hayan borrado desde otro dispositivo.'),
+    receta ? construirFicha(receta, { onPuntuar: puntuar, onNota: guardarNota, verFoto }) : el('p', { class: 'vacio' }, 'No se encuentra esta receta. Puede que la hayan borrado desde otro dispositivo.'),
   );
   $('#ficha-pantalla').hidden = !(receta && puedeMantenerPantalla());
 }

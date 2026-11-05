@@ -88,8 +88,14 @@ function seccionNotas(r, onNota) {
 /**
  * Construye la ficha completa (sin la barra de volver, que pone main.js).
  * `onPuntuar(n, grupo)` y `onNota(textarea, boton)` guardan; sin ellos la ficha es de solo lectura.
+ * `verFoto(img, ruta)` carga la foto del repo privado.
  */
-export function construirFicha(r, { onPuntuar, onNota } = {}) {
+export function construirFicha(r, { onPuntuar, onNota, verFoto } = {}) {
+  let foto = null;
+  if (r.foto && verFoto) {
+    foto = el('img', { class: 'ficha-foto', alt: `Foto: ${r.titulo}` });
+    verFoto(foto, r.foto);
+  }
   const datos = [
     ['Raciones', String(r.raciones)],
     ['Tiempo', formatearTiempo(r.tiempo)],
@@ -100,12 +106,13 @@ export function construirFicha(r, { onPuntuar, onNota } = {}) {
   return el(
     'article',
     { class: 'ficha' },
+    foto,
     el('h2', {}, r.titulo),
     onPuntuar
       ? puntuador(r, onPuntuar)
       : r.puntuacion && el('p', { class: 'estrellas grande', 'aria-label': `Puntuación: ${r.puntuacion} de 5` }, estrellas(r.puntuacion)),
-    chips.length && el('ul', { class: 'chips' }, chips.map(([tipo, t]) => el('li', { class: tipo }, t))),
-    datos.length && el('dl', { class: 'ficha-datos' }, datos.map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v)))),
+    chips.length > 0 && el('ul', { class: 'chips' }, chips.map(([tipo, t]) => el('li', { class: tipo }, t))),
+    datos.length > 0 && el('dl', { class: 'ficha-datos' }, datos.map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v)))),
     seccion(
       'Ingredientes',
       r.ingredientes.length

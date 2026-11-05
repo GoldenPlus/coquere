@@ -1,7 +1,8 @@
 // Formulario de receta, nueva o para editar: campos básicos, filas de ingredientes y pasos que se pueden reordenar.
 
 import { UNIDADES, nuevaReceta } from './receta.js';
-import { crearReceta, editarReceta, textoALista, RecetaInvalidaError, RecetaCambiadaError } from './recetas.js';
+import { crearReceta, editarReceta, prepararReceta, textoALista, RecetaInvalidaError, RecetaCambiadaError } from './recetas.js';
+import { reducirFoto, subirFoto, borrarFoto, mostrarFoto } from './fotos.js';
 import { $, el, ocupado, fechaLegible } from './dom.js';
 
 const dialogo = () => $('#dlg-receta');
@@ -11,6 +12,10 @@ let borrador = null;
 let base = null;
 /** Lo que había al abrir, para saber si hay cambios que se perderían. */
 let inicial = '';
+/** Foto elegida y ya reducida ({ grande, mini }), o null. `fotoQuitada`: se pulsó «Quitar foto». */
+let fotoNueva = null;
+let fotoQuitada = false;
+let appActual = null;
 let alGuardar = () => {};
 
 // ---------- Ingredientes
@@ -102,7 +107,7 @@ function leerFormulario() {
 }
 
 /** ¿Hay algo escrito que se perdería al cerrar? */
-const hayCambios = () => JSON.stringify(leerFormulario()) !== inicial;
+const hayCambios = () => JSON.stringify(leerFormulario()) !== inicial || Boolean(fotoNueva) || fotoQuitada;
 
 function mostrarErrores(errores) {
   const lista = $('#receta-errores');
@@ -110,33 +115,94 @@ function mostrarErrores(errores) {
   if (errores.length) dialogo().scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ---------- Foto
+
+function pintarFoto() {
+  const img = $('#receta-foto-vista');
+  const ruta = fotoQuitada ? null : borrador.foto;
+  const hay = Boolean(fotoNueva || ruta);
+  img.hidden = !hay;
+  img.classList.remove('cargada', 'sin-foto');
+  img.removeAttribute('src');
+  if (fotoNueva) {
+    img.src = URL.createObjectURL(fotoNueva.grande);
+    img.classList.add('cargada');
+  } else if (ruta) {
+    mostrarFoto(img, appActual.cliente, ruta);
+  }
+  $('#receta-foto-elegir-texto').textContent = hay ? '📷 Cambiar foto' : '📷 Añadir foto';
+  $('#receta-foto-quitar').hidden = !hay;
+}
+
+async function fotoElegida(evento) {
+  const archivo = evento.target.files?.[0];
+  evento.target.value = ''; // Para poder elegir la misma otra vez.
+  if (!archivo) return;
+  const estado = $('#receta-foto-estado');
+  estado.textContent = 'Preparando la foto…';
+  // Mientras se prepara no se puede guardar: se guardaría sin la foto nueva.
+  const listo = ocupado($('#receta-guardar'), 'Preparando foto…');
+  try {
+    fotoNueva = await reducirFoto(archivo);
+    fotoQuitada = false;
+    estado.textContent = '';
+    pintarFoto();
+  } catch (e) {
+    estado.textContent = e.message;
+  } finally {
+    listo();
+  }
+}
+
+function quitarFoto() {
+  if (fotoNueva) fotoNueva = null;
+  else fotoQuitada = true;
+  pintarFoto();
+}
+
+// ---------- Guardar
+
 async function guardar(evento, app) {
   evento.preventDefault();
   mostrarErrores([]);
   const listo = ocupado($('#receta-guardar'), 'Guardando…');
   const datosForm = leerFormulario();
   const autor = app.config.nombre;
+  let subida = null;
   try {
+    prepararReceta(datosForm); // Si falta algo, se avisa antes de subir la foto.
+    const fotoCambiada = Boolean(fotoNueva) || fotoQuitada;
+    if (fotoNueva) {
+      $('#receta-guardar').textContent = 'Subiendo foto…';
+      subida = await subirFoto(app.cliente, datosForm, fotoNueva, autor);
+      $('#receta-guardar').textContent = 'Guardando…';
+    }
+    if (fotoCambiada) datosForm.foto = subida;
     let resultado;
     if (base === null) {
       resultado = await crearReceta(app.cliente, datosForm, autor);
     } else {
       try {
-        resultado = await editarReceta(app.cliente, datosForm, autor, { base });
+        resultado = await editarReceta(app.cliente, datosForm, autor, { base, fotoCambiada });
       } catch (e) {
         if (!(e instanceof RecetaCambiadaError)) throw e;
         const cuando = fechaLegible(e.actual.modificada);
         if (!confirm(`Otra persona ha cambiado esta receta (${cuando}) mientras la editabas.\n\nAceptar: guardar tus cambios encima de los suyos.\nCancelar: seguir editando sin guardar.`)) {
           mostrarErrores(['No se ha guardado: otra persona cambió la receta. Puedes guardar encima o cancelar y abrirla de nuevo para ver sus cambios.']);
+          await borrarFoto(app.cliente, subida, datosForm.titulo, autor);
           return;
         }
-        resultado = await editarReceta(app.cliente, datosForm, autor, { base, forzar: true });
+        resultado = await editarReceta(app.cliente, datosForm, autor, { base, forzar: true, fotoCambiada });
       }
     }
+    subida = null; // Ya es de la receta: no se borra.
     borrador = null;
     dialogo().close();
     alGuardar(resultado.datos, resultado.receta);
+    // La foto anterior se borra al final: si falla, solo queda un archivo suelto.
+    if (resultado.fotoAnterior) borrarFoto(app.cliente, resultado.fotoAnterior, resultado.receta.titulo, autor);
   } catch (e) {
+    if (subida) await borrarFoto(app.cliente, subida, datosForm.titulo, autor);
     mostrarErrores(e instanceof RecetaInvalidaError ? e.errores : [`${e.message} Lo escrito sigue aquí; prueba a guardar de nuevo.`]);
   } finally {
     listo();
@@ -164,6 +230,10 @@ function abrir(receta, esNueva) {
   const ingredientes = receta.ingredientes.map((i) => ({ ...i, cantidad: i.cantidad === null ? '' : String(i.cantidad).replace('.', ',') }));
   $('#receta-ingredientes').replaceChildren(...(ingredientes.length ? ingredientes.map(filaIngrediente) : [filaIngrediente()]));
   $('#receta-pasos').replaceChildren(...(receta.pasos.length ? receta.pasos.map(filaPaso) : [filaPaso()]));
+  fotoNueva = null;
+  fotoQuitada = false;
+  $('#receta-foto-estado').textContent = '';
+  pintarFoto();
   mostrarErrores([]);
   inicial = JSON.stringify(leerFormulario());
   dialogo().showModal();
@@ -179,6 +249,9 @@ export const abrirEditarReceta = (receta) => abrir(structuredClone(receta), fals
 /** Conecta el formulario una vez. `onGuardada(datos, receta)` recibe recetas.json tal como queda en GitHub. */
 export function prepararFormularioReceta(app, onGuardada) {
   alGuardar = onGuardada;
+  appActual = app;
+  $('#receta-foto-archivo').addEventListener('change', fotoElegida);
+  $('#receta-foto-quitar').addEventListener('click', quitarFoto);
   formulario().addEventListener('submit', (e) => guardar(e, app));
   $('#receta-cancelar').addEventListener('click', cerrar);
   $('#receta-anadir-ingrediente').addEventListener('click', () => anadir($('#receta-ingredientes'), filaIngrediente()));

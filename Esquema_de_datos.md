@@ -49,7 +49,7 @@ El código del esquema está en `js/receta.js` (`normalizarReceta`, `validarRece
 | `pasos` | lista de textos | lista, puede estar vacía | En orden. Cada paso puede tener varias líneas. |
 | `notas` | lista de `{ fecha, autor, texto }` | lista, puede estar vacía | `fecha` en ISO 8601; `autor` es el nombre del dispositivo que la escribió. |
 | `puntuacion` | entero 1–5 o `null` | no | |
-| `foto` | ruta o `null` | no | Siempre dentro de `fotos/` del repo de datos (`.jpg`, `.png` o `.webp`). Nunca una URL externa. |
+| `foto` | ruta o `null` | no | Siempre dentro de `fotos/` del repo de datos (`.jpg`, `.png` o `.webp`). Nunca una URL externa. Al lado está su miniatura (`….mini.jpg`). Cada foto nueva tiene nombre nuevo: un archivo de foto no cambia nunca. |
 | `creada`, `modificada` | fecha ISO 8601 | sí | |
 
 ### Ingredientes

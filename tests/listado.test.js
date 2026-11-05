@@ -23,6 +23,6 @@ test('filasListado ordena por título sin distinguir tildes ni mayúsculas y res
     { id: '3', titulo: 'Bizcocho', categorias: ['Postres'], tiempo: 90, dificultad: 3, puntuacion: 3 },
   ]);
   assert.deepEqual(filas.map((f) => f.titulo), ['Ánimas de cordero', 'Bizcocho', 'tortilla']);
-  assert.deepEqual(filas[2], { id: '1', titulo: 'tortilla', categoria: 'Segundos, Cenas', tiempo: '40 min', dificultad: 'Fácil', estrellas: '★★★★★', puntuacion: 5 });
-  assert.deepEqual(filas[0], { id: '2', titulo: 'Ánimas de cordero', categoria: '', tiempo: '', dificultad: '', estrellas: '', puntuacion: null });
+  assert.deepEqual(filas[2], { id: '1', titulo: 'tortilla', categoria: 'Segundos, Cenas', tiempo: '40 min', dificultad: 'Fácil', estrellas: '★★★★★', puntuacion: 5, foto: null });
+  assert.deepEqual(filas[0], { id: '2', titulo: 'Ánimas de cordero', categoria: '', tiempo: '', dificultad: '', estrellas: '', puntuacion: null, foto: null });
 });
