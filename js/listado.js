@@ -37,18 +37,15 @@ export function filasListado(recetas) {
 
 function tarjeta(f) {
   const datos = [f.tiempo && `⏱ ${f.tiempo}`, f.dificultad].filter(Boolean).join(' · ');
-  return el(
-    'li',
-    { class: 'receta', 'data-id': f.id },
-    el(
-      'div',
-      { class: 'receta-cabeza' },
-      el('h3', {}, f.titulo),
-      f.estrellas && el('span', { class: 'estrellas', title: `${f.puntuacion} de 5`, 'aria-label': `Puntuación: ${f.puntuacion} de 5` }, f.estrellas),
-    ),
-    (f.categoria || datos) &&
-      el('p', { class: 'receta-datos' }, f.categoria && el('span', { class: 'categoria' }, f.categoria), datos && el('span', {}, datos)),
+  const cabeza = el(
+    'div',
+    { class: 'receta-cabeza' },
+    el('h3', {}, f.titulo),
+    f.estrellas && el('span', { class: 'estrellas', title: `${f.puntuacion} de 5`, 'aria-label': `Puntuación: ${f.puntuacion} de 5` }, f.estrellas),
   );
+  const resumen = (f.categoria || datos) &&
+    el('p', { class: 'receta-datos' }, f.categoria && el('span', { class: 'categoria' }, f.categoria), datos && el('span', {}, datos));
+  return el('li', { class: 'receta' }, el('a', { href: `#receta/${encodeURIComponent(f.id)}`, class: 'receta-enlace' }, cabeza, resumen));
 }
 
 /** Pinta el listado en `contenedor`; sin recetas, una invitación a crear la primera. */

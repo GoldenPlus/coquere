@@ -101,10 +101,10 @@ main { padding: 0.5rem 1rem 6rem; max-width: 50rem; margin: 0 auto; }
 /* Listado de recetas */
 .resumen { margin: 0.5rem 0 0.75rem; color: var(--suave); font-size: 0.9rem; }
 .lista-recetas { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
-.receta {
-  background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio);
-  padding: 0.75rem 0.9rem;
-}
+.receta { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); }
+.receta-enlace { display: block; padding: 0.75rem 0.9rem; color: inherit; text-decoration: none; border-radius: inherit; }
+.receta-enlace:active { background: var(--fondo); }
+.receta-enlace:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
 .receta-cabeza { display: flex; align-items: baseline; gap: 0.5rem; }
 .receta h3 { margin: 0; font-size: 1.05rem; flex: 1; overflow-wrap: anywhere; }
 .estrellas { color: #c08a1e; letter-spacing: 0.05em; white-space: nowrap; font-size: 0.9rem; }
@@ -206,3 +206,28 @@ legend { font-weight: 600; padding: 0 0.3rem; }
   position: sticky; bottom: 0; background: var(--superficie);
   padding: 0.75rem 0 max(0.75rem, env(safe-area-inset-bottom)); margin-top: 0; border-top: 1px solid var(--borde);
 }
+
+/* Ficha de receta: letra grande para leer mientras se cocina */
+.volver { margin: 0.5rem 0 0.25rem; padding: 0.4em 0.9em; }
+.ficha { font-size: 1.15rem; line-height: 1.5; }
+.ficha h2 { font-size: 1.6rem; line-height: 1.2; margin: 0.6rem 0 0.3rem; overflow-wrap: anywhere; }
+.estrellas.grande { font-size: 1.2rem; margin: 0 0 0.4rem; }
+.chips { list-style: none; padding: 0; margin: 0.3rem 0 0.6rem; display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 0.9rem; }
+.chips li { border: 1px solid var(--borde); border-radius: 999px; padding: 0.1em 0.7em; color: var(--suave); }
+.chips li.categoria { border-color: var(--acento); color: var(--acento); font-weight: 500; }
+.ficha-datos { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
+.ficha-datos > div { background: var(--superficie); border: 1px solid var(--borde); border-radius: 8px; padding: 0.35rem 0.8rem; }
+.ficha-datos dt { font-size: 0.8rem; color: var(--suave); }
+.ficha-datos dd { margin: 0; font-weight: 600; }
+.ficha-seccion { margin-top: 1.2rem; }
+.ficha-seccion h3 { font-size: 1.2rem; margin: 0 0 0.4rem; border-bottom: 1px solid var(--borde); padding-bottom: 0.2rem; }
+.ingredientes { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.3rem; }
+.detalle { color: var(--suave); }
+.pasos-ficha { margin: 0.4rem 0 0; padding-left: 1.6rem; display: grid; gap: 0.7rem; }
+.pasos-ficha li { white-space: pre-line; cursor: pointer; border-radius: 6px; padding: 0.1rem 0.3rem; -webkit-tap-highlight-color: transparent; }
+.pasos-ficha li.hecho { color: var(--suave); text-decoration: line-through; }
+.pasos-ficha li:focus-visible { outline: 2px solid var(--acento); }
+.notas { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.notas li { background: var(--superficie); border-left: 3px solid var(--acento); border-radius: 0 8px 8px 0; padding: 0.4rem 0.7rem; }
+.notas p { margin: 0; white-space: pre-line; }
+.pantalla { margin-top: 1.5rem; text-align: center; }

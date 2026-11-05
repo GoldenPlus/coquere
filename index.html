@@ -8,24 +8,25 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-HFe8asMggWxaoJSEKqO93loX47OOu2EOMgx90xFftWA='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=1b269c4620">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-ENN4Bes9sdkbXWU1ltqxCl5al+wuy/ONGBu6nstqwgU='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=2cd0606f38">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=db73d54f84",
       "./js/config.js": "./js/config.js?v=640e00eb72",
       "./js/dom.js": "./js/dom.js?v=749c587cc2",
       "./js/estado.js": "./js/estado.js?v=941b583a8f",
+      "./js/ficha.js": "./js/ficha.js?v=eb3a28f97f",
       "./js/formulario-receta.js": "./js/formulario-receta.js?v=311c0b75d8",
       "./js/github.js": "./js/github.js?v=e2692930d9",
-      "./js/listado.js": "./js/listado.js?v=cdd5ee0649",
-      "./js/main.js": "./js/main.js?v=80c3e24470",
+      "./js/listado.js": "./js/listado.js?v=d77772fe18",
+      "./js/main.js": "./js/main.js?v=f2870b3981",
       "./js/receta.js": "./js/receta.js?v=cf59f461bd",
       "./js/recetas.js": "./js/recetas.js?v=462eefc735",
       "./js/texto.js": "./js/texto.js?v=847e5e4645"
   } }
   </script>
-  <script type="module" src="js/main.js?v=80c3e24470"></script>
+  <script type="module" src="js/main.js?v=f2870b3981"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -42,6 +43,11 @@
     <section id="recetario" hidden>
       <p class="resumen"><span id="resumen-recetas"></span> · <span id="resumen-fecha"></span></p>
       <div id="listado"></div>
+    </section>
+    <section id="vista-ficha" hidden>
+      <button id="ficha-volver" class="secundario volver" type="button">← Recetas</button>
+      <div id="ficha"></div>
+      <p id="ficha-pantalla" class="ayuda pantalla" hidden>☀ La pantalla no se apagará mientras tengas abierta la receta.</p>
     </section>
   </main>
 

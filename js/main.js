@@ -5,9 +5,10 @@ import { crearCliente } from './github.js';
 import { crearAlmacen } from './almacen.js';
 import { limpiar } from './texto.js';
 import { app } from './estado.js';
-import { $, aviso, fechaLegible, ocupado } from './dom.js';
+import { $, el, aviso, fechaLegible, ocupado } from './dom.js';
 import { abrirNuevaReceta, prepararFormularioReceta } from './formulario-receta.js';
 import { pintarListado } from './listado.js';
+import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './ficha.js';
 
 function mostrarEstado(texto, esError = false) {
   const nodo = $('#estado');
@@ -15,17 +16,57 @@ function mostrarEstado(texto, esError = false) {
   nodo.classList.toggle('error', esError);
 }
 
+/** Receta abierta según la dirección (#receta/<id>), o null en el listado. */
+function idEnDireccion() {
+  const m = location.hash.match(/^#receta\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+let scrollListado = 0;
+
 function render() {
   // Con copia local se muestra al instante, aunque aún no haya respuesta de GitHub.
   const hayDatos = Boolean(app.cliente && app.almacen.fecha);
-  $('#recetario').hidden = !hayDatos;
-  $('#btn-nueva').hidden = !hayDatos;
+  const id = hayDatos ? idEnDireccion() : null;
+  const enFicha = id !== null;
+  $('#recetario').hidden = !hayDatos || enFicha;
+  $('#vista-ficha').hidden = !enFicha;
+  $('#btn-nueva').hidden = !hayDatos || enFicha;
+  pantallaEncendida(enFicha);
   if (!hayDatos) return;
   const recetas = app.almacen.items('recetas');
-  const fecha = fechaLegible(app.almacen.fecha);
+  if (enFicha) return pintarFicha(recetas.find((r) => r.id === id));
   $('#resumen-recetas').textContent = recetas.length === 1 ? '1 receta' : `${recetas.length} recetas`;
-  $('#resumen-fecha').textContent = `actualizado ${fecha}`;
+  $('#resumen-fecha').textContent = `actualizado ${fechaLegible(app.almacen.fecha)}`;
   pintarListado($('#listado'), recetas);
+}
+
+let fichaPintada = null;
+
+function pintarFicha(receta) {
+  // Si se actualiza desde GitHub y la receta no ha cambiado, no se redibuja: se conservan los pasos tachados.
+  const clave = receta ? `${receta.id}@${receta.modificada}` : 'ninguna';
+  if (clave === fichaPintada && !$('#vista-ficha').hidden) return;
+  fichaPintada = clave;
+  $('#ficha').replaceChildren(
+    receta ? construirFicha(receta) : el('p', { class: 'vacio' }, 'No se encuentra esta receta. Puede que la hayan borrado desde otro dispositivo.'),
+  );
+  $('#ficha-pantalla').hidden = !(receta && puedeMantenerPantalla());
+}
+
+/** Al cambiar de vista: la ficha empieza arriba; la lista vuelve a donde estaba. */
+function cambioDeVista() {
+  const deListado = $('#vista-ficha').hidden;
+  if (deListado) scrollListado = window.scrollY;
+  render();
+  if (idEnDireccion() === null) fichaPintada = null;
+  window.scrollTo(0, idEnDireccion() !== null ? 0 : scrollListado);
+}
+
+/** Volver con «atrás» si se llegó desde la lista; si se abrió la ficha directamente, ir a la lista. */
+function volver() {
+  if (history.state?.desdeListado) history.back();
+  else location.replace('#');
 }
 
 async function recargar() {
@@ -123,6 +164,17 @@ function iniciar() {
   // Sin configuración no se puede cerrar el diálogo de ajustes.
   $('#dlg-ajustes').addEventListener('cancel', (e) => {
     if (!app.cliente) e.preventDefault();
+  });
+
+  window.addEventListener('hashchange', cambioDeVista);
+  $('#ficha-volver').addEventListener('click', volver);
+  // Marca las entradas abiertas desde la lista, para que «← Recetas» equivalga al botón atrás.
+  $('#listado').addEventListener('click', (e) => {
+    const enlace = e.target.closest('a[href^="#receta/"]');
+    if (!enlace) return;
+    e.preventDefault();
+    history.pushState({ desdeListado: true }, '', enlace.getAttribute('href'));
+    cambioDeVista();
   });
 
   window.addEventListener('online', recargar);
