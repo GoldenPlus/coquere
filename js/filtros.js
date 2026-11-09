@@ -1,16 +1,17 @@
 // Búsqueda y filtros del listado de recetas.
 
 import { normalizar, compararTitulos } from './texto.js';
+import { PROTEINAS } from './receta.js';
 import { NOMBRES_DIFICULTAD, formatearTiempo } from './listado.js';
 import { el } from './dom.js';
 
-export const filtrosVacios = () => ({ texto: '', categoria: null, etiquetas: [], puntuacionMin: null, dificultadMax: null, tiempoMax: null });
+export const filtrosVacios = () => ({ texto: '', categoria: null, proteina: null, etiquetas: [], puntuacionMin: null, dificultadMax: null, tiempoMax: null });
 
 export const TIEMPOS = [15, 30, 45, 60, 90];
 
 /** Cuántos filtros hay puestos (la búsqueda no cuenta: se ve en su caja). */
 export function filtrosActivos(f) {
-  return [f.categoria, f.puntuacionMin, f.dificultadMax, f.tiempoMax].filter((v) => v !== null).length + f.etiquetas.length;
+  return [f.categoria, f.proteina ?? null, f.puntuacionMin, f.dificultadMax, f.tiempoMax].filter((v) => v !== null).length + f.etiquetas.length;
 }
 
 const clave = (t) => normalizar(t);
@@ -28,6 +29,7 @@ export function filtrarRecetas(recetas, f) {
       if (!palabras.every((p) => donde.includes(p))) return false;
     }
     if (f.categoria !== null && !r.categorias.some((c) => clave(c) === clave(f.categoria))) return false;
+    if (f.proteina && !(r.proteinas ?? []).includes(f.proteina)) return false;
     if (etiquetas.length) {
       const suyas = r.etiquetas.map(clave);
       if (!etiquetas.every((e) => suyas.includes(e))) return false;
@@ -65,9 +67,13 @@ const unica = (f, campo, valor, cambiar) => () => cambiar({ ...f, [campo]: f[cam
 /** Contenido del panel de filtros. `cambiar(nuevos)` se llama con los filtros nuevos en cada toque. */
 export function construirPanel(recetas, f, cambiar) {
   const { categorias, etiquetas } = opcionesFiltro(recetas);
+  // Solo las proteínas que tiene alguna receta, en su orden.
+  const usadas = new Set(recetas.flatMap((r) => r.proteinas ?? []));
+  const proteinas = Object.keys(PROTEINAS).filter((p) => usadas.has(p) || f.proteina === p);
   const conEtiqueta = (e) => f.etiquetas.some((x) => clave(x) === clave(e));
   return [
     grupo('Categoría', categorias.map((c) => ficha(c, f.categoria !== null && clave(f.categoria) === clave(c), unica(f, 'categoria', c, cambiar)))),
+    grupo('Proteína', proteinas.map((p) => ficha(`${PROTEINAS[p].icono} ${PROTEINAS[p].nombre}`, f.proteina === p, unica(f, 'proteina', p, cambiar)))),
     grupo('Etiquetas', etiquetas.map((e) => ficha(e, conEtiqueta(e), () =>
       cambiar({ ...f, etiquetas: conEtiqueta(e) ? f.etiquetas.filter((x) => clave(x) !== clave(e)) : [...f.etiquetas, e] }),
     ))),

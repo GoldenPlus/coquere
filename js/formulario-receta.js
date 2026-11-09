@@ -1,6 +1,6 @@
 // Formulario de receta, nueva o para editar: campos básicos, filas de ingredientes y pasos que se pueden reordenar.
 
-import { UNIDADES, nuevaReceta } from './receta.js';
+import { UNIDADES, PROTEINAS, nuevaReceta } from './receta.js';
 import { crearReceta, editarReceta, prepararReceta, textoALista, RecetaInvalidaError, RecetaCambiadaError } from './recetas.js';
 import { reducirFoto, subirFoto, borrarFoto, mostrarFoto } from './fotos.js';
 import { indiceIngredientes, sugerirIngredientes } from './ingredientes.js';
@@ -129,6 +129,23 @@ function anadir(lista, fila) {
   $('input, textarea', fila).focus();
 }
 
+// ---------- Proteínas: fichas para tocar
+
+const leerProteinas = () => [...$('#receta-proteinas').querySelectorAll('[aria-pressed="true"]')].map((b) => b.dataset.proteina);
+
+function pintarProteinas(elegidas) {
+  const tocar = (p) => {
+    const actuales = leerProteinas();
+    // «Vegetal» excluye a las demás, y al revés.
+    const nuevas = actuales.includes(p) ? actuales.filter((x) => x !== p) : p === 'vegetal' ? ['vegetal'] : [...actuales.filter((x) => x !== 'vegetal'), p];
+    pintarProteinas(nuevas);
+  };
+  $('#receta-proteinas').replaceChildren(
+    ...Object.entries(PROTEINAS).map(([p, { nombre, icono }]) =>
+      el('button', { type: 'button', class: `ficha-filtro${elegidas.includes(p) ? ' activa' : ''}`, 'aria-pressed': String(elegidas.includes(p)), 'data-proteina': p, onclick: () => tocar(p) }, `${icono} ${nombre}`)),
+  );
+}
+
 // ---------- Leer y guardar
 
 function leerFormulario() {
@@ -138,6 +155,7 @@ function leerFormulario() {
     titulo: f.titulo.value,
     categorias: textoALista(f.categorias.value),
     etiquetas: textoALista(f.etiquetas.value),
+    proteinas: leerProteinas(),
     raciones: f.raciones.value,
     tiempo: f.tiempo.value,
     dificultad: f.dificultad.value,
@@ -265,6 +283,7 @@ function abrir(receta, esNueva) {
   f.titulo.value = receta.titulo;
   f.categorias.value = receta.categorias.join(', ');
   f.etiquetas.value = receta.etiquetas.join(', ');
+  pintarProteinas(receta.proteinas ?? []);
   f.raciones.value = receta.raciones;
   f.tiempo.value = receta.tiempo ?? '';
   f.dificultad.value = receta.dificultad ?? '';

@@ -1,6 +1,6 @@
 // Ficha de una receta: pensada para leerla en el móvil mientras se cocina.
 
-import { UNIDADES } from './receta.js';
+import { UNIDADES, PROTEINAS } from './receta.js';
 import { NOMBRES_DIFICULTAD, formatearTiempo, estrellas } from './listado.js';
 import { el, fechaLegible } from './dom.js';
 import { escalarReceta } from './escalado.js';
@@ -105,7 +105,11 @@ export function construirFicha(r, { onPuntuar, onNota, verFoto } = {}) {
     ['Tiempo', formatearTiempo(r.tiempo)],
     ['Dificultad', NOMBRES_DIFICULTAD[r.dificultad] ?? ''],
   ].filter(([, v]) => v);
-  const chips = [...r.categorias.map((c) => ['categoria', c]), ...r.etiquetas.map((e) => ['etiqueta', e])];
+  const chips = [
+    ...(r.proteinas ?? []).map((p) => ['proteina', `${PROTEINAS[p]?.icono ?? ''} ${PROTEINAS[p]?.nombre ?? p}`.trim()]),
+    ...r.categorias.map((c) => ['categoria', c]),
+    ...r.etiquetas.map((e) => ['etiqueta', e]),
+  ];
 
   return el(
     'article',

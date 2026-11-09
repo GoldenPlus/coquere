@@ -30,6 +30,28 @@ export const UNIDADES = {
   'al gusto': { nombre: 'al gusto', tipo: 'al gusto', factor: 1, sinCantidad: true },
 };
 
+/**
+ * Proteínas que puede llevar una receta, en el orden en que se muestran. Sirven para equilibrar el menú
+ * semanal. «vegetal»: sin carne, pescado, huevo ni legumbre; no se combina con las demás.
+ */
+export const PROTEINAS = {
+  'carne blanca': { nombre: 'Carne blanca', icono: '🍗' },
+  'carne roja': { nombre: 'Carne roja', icono: '🥩' },
+  'pescado blanco': { nombre: 'Pescado blanco', icono: '🐟' },
+  'pescado azul': { nombre: 'Pescado azul', icono: '🐟' },
+  marisco: { nombre: 'Marisco', icono: '🦐' },
+  huevo: { nombre: 'Huevo', icono: '🥚' },
+  legumbre: { nombre: 'Legumbre', icono: '🫘' },
+  vegetal: { nombre: 'Vegetal', icono: '🥦' },
+};
+
+/** Lista de proteínas válidas, sin repetir y en el orden de PROTEINAS. «vegetal» solo si no hay otra. */
+export function normalizarProteinas(valor) {
+  const elegidas = new Set((Array.isArray(valor) ? valor : []).map((p) => limpiar(p).toLowerCase()));
+  const lista = Object.keys(PROTEINAS).filter((p) => elegidas.has(p));
+  return lista.length > 1 ? lista.filter((p) => p !== 'vegetal') : lista;
+}
+
 export const PUNTUACION = { min: 1, max: 5 };
 export const DIFICULTAD = { min: 1, max: 5 };
 
@@ -45,6 +67,7 @@ export function nuevaReceta(ahora = new Date()) {
     titulo: '',
     categorias: [],
     etiquetas: [],
+    proteinas: [],
     raciones: 4,
     tiempo: null,
     dificultad: null,
@@ -114,6 +137,7 @@ export function normalizarReceta(r = {}) {
     titulo: limpiar(r.titulo),
     categorias: listaDeTextos(r.categorias),
     etiquetas: listaDeTextos(r.etiquetas),
+    proteinas: normalizarProteinas(r.proteinas),
     raciones: entero(r.raciones),
     tiempo: entero(r.tiempo),
     dificultad: entero(r.dificultad),
@@ -144,6 +168,11 @@ export function validarReceta(r) {
   if (r.puntuacion !== null && !enRango(r.puntuacion, PUNTUACION)) errores.push('La puntuación va de 1 a 5.');
   for (const campo of ['categorias', 'etiquetas', 'ingredientes', 'pasos', 'notas']) {
     if (!Array.isArray(r[campo])) errores.push(`Falta la lista «${campo}».`);
+  }
+  // Opcional: las recetas guardadas antes de existir el campo no lo tienen.
+  if (r.proteinas !== undefined) {
+    if (!Array.isArray(r.proteinas)) errores.push('Las proteínas deben ser una lista.');
+    else for (const p of r.proteinas) if (!(p in PROTEINAS)) errores.push(`La proteína «${p}» no está en la lista.`);
   }
   (r.ingredientes ?? []).forEach((i, n) => {
     const cual = `Ingrediente ${n + 1}${i.nombre ? ` (${i.nombre})` : ''}`;

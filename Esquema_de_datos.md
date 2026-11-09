@@ -15,6 +15,7 @@ El código del esquema está en `js/receta.js` (`normalizarReceta`, `validarRece
       "titulo": "Tortilla de patatas",
       "categorias": ["Segundos"],
       "etiquetas": ["vegetariana", "fácil"],
+      "proteinas": ["huevo"],
       "raciones": 4,
       "tiempo": 40,
       "dificultad": 2,
@@ -42,6 +43,7 @@ El código del esquema está en `js/receta.js` (`normalizarReceta`, `validarRece
 | `titulo` | texto | sí | |
 | `categorias` | lista de textos | lista, puede estar vacía | Tipo de plato: «Primeros», «Postres»… |
 | `etiquetas` | lista de textos | lista, puede estar vacía | Libres: «vegetariana», «rápida»… Sin repetidos (no distingue tildes ni mayúsculas). |
+| `proteinas` | lista de textos | no (falta en recetas antiguas: equivale a vacía) | De la lista fija: `carne blanca`, `carne roja`, `pescado blanco`, `pescado azul`, `marisco`, `huevo`, `legumbre`, `vegetal`. Sin repetidos y en ese orden; `vegetal` (sin carne, pescado, huevo ni legumbre) no se combina con las demás. Sirve para equilibrar el menú semanal. |
 | `raciones` | entero ≥ 1 | sí | Base para el escalado. Una receta nueva parte de 4. |
 | `tiempo` | entero ≥ 0 o `null` | no | Minutos totales. |
 | `dificultad` | entero 1–5 o `null` | no | |

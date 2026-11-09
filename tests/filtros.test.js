@@ -5,10 +5,10 @@ import { filtrosVacios, filtrosActivos, filtrarRecetas, opcionesFiltro } from '.
 const R = (titulo, extra = {}) => ({ titulo, categorias: [], etiquetas: [], tiempo: null, dificultad: null, puntuacion: null, ingredientes: [], ...extra });
 const ing = (...nombres) => nombres.map((nombre) => ({ cantidad: 1, unidad: 'unidad', nombre, detalle: '' }));
 const recetas = [
-  R('Pollo al ajillo', { categorias: ['Segundos'], etiquetas: ['rápida'], tiempo: 25, dificultad: 2, puntuacion: 5, ingredientes: ing('pollo', 'ajo') }),
+  R('Pollo al ajillo', { proteinas: ['carne blanca'], categorias: ['Segundos'], etiquetas: ['rápida'], tiempo: 25, dificultad: 2, puntuacion: 5, ingredientes: ing('pollo', 'ajo') }),
   R('Arroz con pollo', { categorias: ['Arroces'], tiempo: 50, dificultad: 3, puntuacion: 4, ingredientes: ing('arroz', 'muslos de pollo') }),
   R('Ensalada César', { categorias: ['Primeros', 'Cenas'], etiquetas: ['Rápida', 'fría'], tiempo: 15, dificultad: 1, ingredientes: ing('lechuga', 'Pollo asado') }),
-  R('Tortilla de patatas', { categorias: ['Segundos'], etiquetas: ['vegetariana'], tiempo: 40, dificultad: 2, puntuacion: 3, ingredientes: ing('huevos', 'patatas') }),
+  R('Tortilla de patatas', { proteinas: ['huevo'], categorias: ['Segundos'], etiquetas: ['vegetariana'], tiempo: 40, dificultad: 2, puntuacion: 3, ingredientes: ing('huevos', 'patatas') }),
   R('Lentejas', { ingredientes: ing('lentejas') }),
 ];
 const titulos = (f) => filtrarRecetas(recetas, { ...filtrosVacios(), ...f }).map((r) => r.titulo);
@@ -46,4 +46,11 @@ test('las opciones salen de las recetas, sin repetidos y en orden', () => {
   const { categorias, etiquetas } = opcionesFiltro(recetas);
   assert.deepEqual(categorias, ['Arroces', 'Cenas', 'Primeros', 'Segundos']);
   assert.deepEqual(etiquetas, ['fría', 'rápida', 'vegetariana']);
+});
+
+test('filtro por proteína: solo las recetas que la llevan (las que no tienen proteínas no salen)', () => {
+  assert.deepEqual(titulos({ proteina: 'huevo' }), ['Tortilla de patatas']);
+  assert.deepEqual(titulos({ proteina: 'carne blanca', texto: 'ajo' }), ['Pollo al ajillo']);
+  assert.deepEqual(titulos({ proteina: 'marisco' }), []);
+  assert.equal(filtrosActivos({ ...filtrosVacios(), proteina: 'huevo' }), 1);
 });

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
-import { UNIDADES, nuevaReceta, leerCantidad, normalizarReceta, validarReceta, validarRecetas } from '../js/receta.js';
+import { UNIDADES, PROTEINAS, nuevaReceta, leerCantidad, normalizarReceta, validarReceta, validarRecetas } from '../js/receta.js';
 
 globalThis.crypto ??= webcrypto; // Node 18 no lo trae global; el navegador sí.
 
@@ -10,6 +10,7 @@ const ejemplo = () => ({
   titulo: 'Tortilla de patatas',
   categorias: ['Segundos'],
   etiquetas: ['vegetariana'],
+  proteinas: ['huevo'],
   raciones: 4,
   tiempo: 40,
   dificultad: 2,
@@ -123,4 +124,21 @@ test('las unidades sumables tienen tipo y factor; solo «al gusto» va sin canti
   }
   assert.equal(UNIDADES.kg.factor * 1, 1000 * UNIDADES.g.factor);
   assert.equal(UNIDADES.cda.tipo, UNIDADES.ml.tipo);
+});
+
+test('proteínas: de la lista fija, sin repetir, en orden y «vegetal» solo si no hay otra', () => {
+  const con = (proteinas) => normalizarReceta({ ...ejemplo(), proteinas }).proteinas;
+  assert.deepEqual(con(['huevo', 'Pescado blanco ', 'huevo', 'pulpo']), ['pescado blanco', 'huevo']);
+  assert.deepEqual(con(['vegetal']), ['vegetal']);
+  assert.deepEqual(con(['vegetal', 'legumbre']), ['legumbre']);
+  assert.deepEqual(con(undefined), []);
+  assert.equal(Object.keys(PROTEINAS).length, 8);
+});
+
+test('una receta guardada antes de existir las proteínas sigue siendo válida', () => {
+  const antigua = ejemplo();
+  delete antigua.proteinas;
+  assert.deepEqual(validarReceta(antigua), []);
+  assert.deepEqual(normalizarReceta(antigua).proteinas, []);
+  assert.deepEqual(validarReceta({ ...ejemplo(), proteinas: ['pulpo'] }), ['La proteína «pulpo» no está en la lista.']);
 });
