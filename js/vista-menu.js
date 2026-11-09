@@ -1,6 +1,6 @@
 // Vista del menú: una semana de lunes a domingo, con comida y cena cada día.
 
-import { HUECOS, RACIONES_MAX, fechaISO, sumarDias, inicioSemana, diasDeSemana, leerFecha, entradasDe, racionesFamilia, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones } from './menus.js';
+import { HUECOS, RACIONES_MAX, fechaISO, sumarDias, inicioSemana, diasDeSemana, leerFecha, entradasDe, especialDe, esEspecial, ESPECIALES, racionesFamilia, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones, marcarEspecial, quitarEspecial } from './menus.js';
 import { filtrarRecetas, filtrosVacios } from './filtros.js';
 import { compararTitulos } from './texto.js';
 import { $, el, aviso, ocupado } from './dom.js';
@@ -8,13 +8,17 @@ import { $, el, aviso, ocupado } from './dom.js';
 let app = null;
 let alCambiar = () => {};
 let lunesActual = null;
-/** Hueco que se está eligiendo: { fecha, hueco, sustituye } (sustituye: id de la receta que se cambia, o null para añadir). */
+/**
+ * Hueco que se está eligiendo: { fecha, hueco, sustituye, modo }.
+ * sustituye: id de la receta que se cambia, o null para añadir. modo: 'receta' (solo recetas), 'vacio' (recetas o especial), 'especial' (cambiar el especial).
+ */
 let eligiendo = null;
 /** Raciones tocadas con −/+ que aún no se han guardado, por «fecha|hueco|receta» (se guardan al dejar de tocar). */
 const racionesPendientes = new Map();
 const temporizadores = new Map();
 
 const NOMBRE_HUECO = { comida: 'Comida', cena: 'Cena' };
+const ICONO_ESPECIAL = { fuera: '🍴', libre: '🎲' };
 
 export const hoyISO = () => fechaISO(new Date());
 
@@ -109,9 +113,35 @@ function plato(entrada, recetas, posicion, total) {
   );
 }
 
+/** Hueco marcado como «Comemos fuera» o «Libre»: sin recetas. */
+function huecoEspecial(fecha, h, especial, etiqueta) {
+  const nombre = ESPECIALES[especial.especial] ?? especial.especial;
+  return el(
+    'div',
+    { class: 'hueco especial' },
+    etiqueta,
+    el('div', { class: 'platos' }, el('div', { class: 'plato plato-especial' },
+      el('div', { class: 'especial-texto' },
+        el('span', { class: 'hueco-especial' }, `${ICONO_ESPECIAL[especial.especial] ?? ''} ${nombre}`.trim()),
+        especial.nota && el('span', { class: 'hueco-nota' }, especial.nota),
+      ),
+      el('div', { class: 'hueco-acciones' },
+        el('button', { type: 'button', class: 'icono', title: 'Cambiar o añadir nota', 'aria-label': `Cambiar «${nombre}» o su nota`, onclick: () => abrirElegir(fecha, h, null, 'especial') }, '✎'),
+        el('button', {
+          type: 'button', class: 'icono quitar', title: 'Vaciar este hueco', 'aria-label': `Vaciar ${NOMBRE_HUECO[h].toLowerCase()} del ${nombreDia(fecha)}`,
+          onclick: (e) => guardar(e.currentTarget, () => quitarEspecial(app.cliente, { fecha, hueco: h }, app.config.nombre)),
+        }, '✕'),
+      ),
+    )),
+  );
+}
+
 function hueco(fecha, h, recetas) {
-  const entradas = entradasDe(app.almacen.items('menus'), fecha, h);
+  const todas = entradasDe(app.almacen.items('menus'), fecha, h);
   const etiqueta = el('span', { class: 'hueco-nombre' }, NOMBRE_HUECO[h]);
+  const especial = todas.find(esEspecial);
+  if (especial) return huecoEspecial(fecha, h, especial, etiqueta);
+  const entradas = todas;
   const anadir = el('button', { type: 'button', class: 'secundario elegir', onclick: () => abrirElegir(fecha, h) }, entradas.length ? '＋ Añadir plato' : '＋ Elegir receta');
   return el(
     'div',
@@ -159,13 +189,31 @@ function pintarOpciones() {
   );
 }
 
-function abrirElegir(fecha, h, sustituye = null) {
-  eligiendo = { fecha, hueco: h, sustituye };
-  const accion = sustituye ? 'cambiar receta' : entradasDe(app.almacen.items('menus'), fecha, h).length ? 'añadir plato' : '';
+function abrirElegir(fecha, h, sustituye = null, modo = null) {
+  const menus = app.almacen.items('menus');
+  modo ??= sustituye || entradasDe(menus, fecha, h).length ? 'receta' : 'vacio';
+  eligiendo = { fecha, hueco: h, sustituye, modo };
+  const accion = sustituye ? 'cambiar receta' : modo === 'receta' ? 'añadir plato' : '';
   $('#elegir-titulo').textContent = `${NOMBRE_HUECO[h]} · ${nombreDia(fecha)}${accion ? ` · ${accion}` : ''}`;
+  // Hueco vacío: recetas o especial. Hueco especial: solo cambiar el tipo o la nota (para poner recetas, se vacía con ✕).
+  const actual = especialDe(menus, fecha, h);
+  $('#elegir-especial').hidden = modo === 'receta';
+  $('#elegir-especial-ayuda').textContent = modo === 'especial' ? 'Elige el tipo y, si quieres, una nota. Para poner recetas, vacía el hueco con ✕.' : 'O deja el hueco sin receta:';
+  $('#elegir-nota').value = actual?.nota ?? '';
+  for (const b of $('#elegir-especial').querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.especial === actual?.especial));
+  $('#elegir-buscar').hidden = $('#elegir-lista').hidden = modo === 'especial';
   $('#elegir-buscar').value = '';
   pintarOpciones();
   $('#dlg-elegir').showModal();
+}
+
+async function elegirEspecial(boton) {
+  const { fecha, hueco: h } = eligiendo;
+  const especial = boton.dataset.especial;
+  for (const b of $('#dlg-elegir').querySelectorAll('button')) b.disabled = true;
+  await guardar(boton, () => marcarEspecial(app.cliente, { fecha, hueco: h, especial, nota: $('#elegir-nota').value }, app.config.nombre), `${ESPECIALES[especial]}: ${NOMBRE_HUECO[h].toLowerCase()} del ${nombreDia(fecha)}`);
+  for (const b of $('#dlg-elegir').querySelectorAll('button')) b.disabled = false;
+  $('#dlg-elegir').close();
 }
 
 async function elegir(receta, boton) {
@@ -183,6 +231,7 @@ export function prepararMenu(estadoApp, onCambio) {
   app = estadoApp;
   alCambiar = onCambio;
   $('#elegir-buscar').addEventListener('input', pintarOpciones);
+  for (const b of $('#elegir-especial').querySelectorAll('button')) b.addEventListener('click', () => elegirEspecial(b));
   $('#elegir-cancelar').addEventListener('click', () => $('#dlg-elegir').close());
   $('#semana-anterior').addEventListener('click', () => location.replace(`#menu/${sumarDias(lunesActual, -7)}`));
   $('#semana-siguiente').addEventListener('click', () => location.replace(`#menu/${sumarDias(lunesActual, 7)}`));

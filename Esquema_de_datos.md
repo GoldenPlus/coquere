@@ -95,6 +95,21 @@ Una entrada por receta planificada. Un hueco (día + comida o cena) puede tener 
 | `raciones` | entero 1–50 | Por defecto, las raciones de la familia (ver `ajustes.json`). |
 | `origen` | `manual` o `auto` | `manual`: elegida a mano; el generador de menús (PL-02) no la cambia. |
 
+### Huecos especiales
+
+Un hueco se puede marcar como «Comemos fuera» o «Libre / improvisar». Es una entrada sin `receta` ni `raciones` que ocupa el hueco ella sola (no se mezcla con recetas). El generador no la toca, y no cuenta en la lista de la compra ni en el equilibrio semanal.
+
+```json
+{ "fecha": "2026-11-14", "hueco": "comida", "especial": "fuera", "nota": "en casa de la abuela", "origen": "manual" }
+```
+
+| Campo | Tipo | Notas |
+| --- | --- | --- |
+| `especial` | `fuera` o `libre` | «Comemos fuera» o «Libre / improvisar». |
+| `nota` | texto, hasta 200 caracteres | Puede estar vacía. |
+
+Quien recorra `items` para sumar ingredientes o contar recetas debe saltarse las entradas con `especial` (`esEspecial()` en `js/menus.js`).
+
 ## ajustes.json
 
 Ajustes compartidos por toda la familia (los de cada dispositivo, como el token, no salen de ese dispositivo). No es una lista.

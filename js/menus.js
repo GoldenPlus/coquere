@@ -4,12 +4,16 @@
 // Un hueco (fecha + comida/cena) puede tener varias entradas, una por receta (sin repetir receta en el mismo hueco).
 // El orden de las entradas de un hueco en el fichero es el orden en que se muestran.
 // `origen`: 'manual' si la eligió alguien a mano (PL-02 no la cambia).
+// Hueco especial: { fecha, hueco, especial: 'fuera' | 'libre', nota: '', origen: 'manual' }, sin receta ni raciones.
+// Ocupa el hueco él solo: no se mezcla con recetas. No cuenta en la lista de la compra ni en el equilibrio.
 
 export const FICHERO_MENUS = 'menus.json';
 export const FICHERO_AJUSTES = 'ajustes.json';
 export const HUECOS = ['comida', 'cena'];
 export const RACIONES_POR_DEFECTO = 4;
 export const RACIONES_MAX = 50;
+export const ESPECIALES = { fuera: 'Comemos fuera', libre: 'Libre / improvisar' };
+export const NOTA_MAX = 200;
 
 // ---------- Fechas (siempre en hora local: «hoy» es el día del dispositivo)
 
@@ -48,6 +52,11 @@ const delHueco = (fecha, hueco) => (e) => e.fecha === fecha && e.hueco === hueco
 /** Entradas de un hueco, en su orden. */
 export const entradasDe = (menus, fecha, hueco) => menus.filter(delHueco(fecha, hueco));
 
+export const esEspecial = (e) => Boolean(e.especial);
+
+/** La entrada especial («Comemos fuera», «Libre») de un hueco, o null. */
+export const especialDe = (menus, fecha, hueco) => menus.find((e) => delHueco(fecha, hueco)(e) && esEspecial(e)) ?? null;
+
 const mismaEntrada = (fecha, hueco, receta) => (e) => e.fecha === fecha && e.hueco === hueco && e.receta === receta;
 const ordenar = (items) => items.sort((a, b) => a.fecha.localeCompare(b.fecha) || HUECOS.indexOf(a.hueco) - HUECOS.indexOf(b.hueco)); // estable: respeta el orden dentro del hueco
 
@@ -64,8 +73,14 @@ export function validarEntrada(e) {
   const errores = [];
   if (!esFechaISO(e.fecha)) errores.push('La fecha del menú no es válida.');
   if (!HUECOS.includes(e.hueco)) errores.push('El hueco debe ser comida o cena.');
-  if (!e.receta) errores.push('Falta la receta.');
-  if (!Number.isInteger(e.raciones) || e.raciones < 1 || e.raciones > RACIONES_MAX) errores.push(`Las raciones van de 1 a ${RACIONES_MAX}.`);
+  if (esEspecial(e)) {
+    if (!(e.especial in ESPECIALES)) errores.push('Tipo de hueco especial desconocido.');
+    if (typeof e.nota !== 'string' || e.nota.length > NOTA_MAX) errores.push(`La nota admite hasta ${NOTA_MAX} caracteres.`);
+    if ('receta' in e || 'raciones' in e) errores.push('Un hueco especial no lleva receta.');
+  } else {
+    if (!e.receta) errores.push('Falta la receta.');
+    if (!Number.isInteger(e.raciones) || e.raciones < 1 || e.raciones > RACIONES_MAX) errores.push(`Las raciones van de 1 a ${RACIONES_MAX}.`);
+  }
   if (!['manual', 'auto'].includes(e.origen)) errores.push('Falta el origen de la entrada.');
   return errores;
 }
@@ -80,6 +95,8 @@ export function conEntrada(datos, entrada, { sustituye = null } = {}) {
   const errores = validarEntrada(entrada);
   if (errores.length) throw new Error(errores.join(' '));
   const { fecha, hueco, receta } = entrada;
+  const especial = especialDe(datos.items, fecha, hueco);
+  if (especial) throw new Error(`Ese hueco está marcado como «${ESPECIALES[especial.especial]}». Quítalo antes de poner recetas.`);
   const items = [...datos.items];
   const i = items.findIndex(mismaEntrada(fecha, hueco, receta));
   const j = sustituye && sustituye !== receta ? items.findIndex(mismaEntrada(fecha, hueco, sustituye)) : -1;
@@ -93,6 +110,22 @@ export function conEntrada(datos, entrada, { sustituye = null } = {}) {
     items.push(entrada);
   }
   return { ...datos, items: ordenar(items) };
+}
+
+/** Marca un hueco como especial (o cambia su tipo o nota). Solo si el hueco no tiene recetas. */
+export function conEspecial(datos, { fecha, hueco, especial, nota = '' }) {
+  const entrada = { fecha, hueco, especial, nota: String(nota).trim(), origen: 'manual' };
+  const errores = validarEntrada(entrada);
+  if (errores.length) throw new Error(errores.join(' '));
+  const delMismo = datos.items.filter(delHueco(fecha, hueco));
+  if (delMismo.some((e) => !esEspecial(e))) throw new Error('Ese hueco ya tiene recetas. Quítalas antes de marcarlo.');
+  if (delMismo.length === 1 && JSON.stringify(delMismo[0]) === JSON.stringify(entrada)) return null;
+  return { ...datos, items: ordenar([...datos.items.filter((e) => !delHueco(fecha, hueco)(e)), entrada]) };
+}
+
+export function sinEspecial(datos, fecha, hueco) {
+  if (!especialDe(datos.items, fecha, hueco)) return null;
+  return { ...datos, items: datos.items.filter((e) => !(delHueco(fecha, hueco)(e) && esEspecial(e))) };
 }
 
 export function sinEntrada(datos, fecha, hueco, receta) {
@@ -137,6 +170,16 @@ export async function ponerReceta(cliente, { fecha, hueco, receta, raciones, sus
 
 export async function quitarDeMenu(cliente, { fecha, hueco, receta }, autor) {
   const { datos } = await cliente.actualizar(FICHERO_MENUS, (d) => sinEntrada(d, fecha, hueco, receta.id), `Menú: quita ${receta.titulo} de la ${nombreHueco(fecha, hueco)} (por ${autor})`);
+  return datos;
+}
+
+export async function marcarEspecial(cliente, { fecha, hueco, especial, nota }, autor) {
+  const { datos } = await cliente.actualizar(FICHERO_MENUS, (d) => conEspecial(d, { fecha, hueco, especial, nota }), `Menú: ${ESPECIALES[especial]} en la ${nombreHueco(fecha, hueco)} (por ${autor})`);
+  return datos;
+}
+
+export async function quitarEspecial(cliente, { fecha, hueco }, autor) {
+  const { datos } = await cliente.actualizar(FICHERO_MENUS, (d) => sinEspecial(d, fecha, hueco), `Menú: vacía la ${nombreHueco(fecha, hueco)} (por ${autor})`);
   return datos;
 }
 

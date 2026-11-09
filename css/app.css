@@ -310,6 +310,14 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 .hueco-receta { font-weight: 600; color: var(--texto); text-decoration: none; overflow-wrap: anywhere; }
 .hueco-receta:hover { text-decoration: underline; }
 .hueco-receta.borrada { color: var(--suave); font-weight: 400; font-style: italic; }
+.plato-especial { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.especial-texto { display: grid; gap: 0.05rem; min-width: 0; }
+.hueco-especial { font-weight: 600; }
+.hueco-nota { color: var(--suave); font-size: 0.9rem; overflow-wrap: anywhere; }
+.elegir-especial { display: grid; gap: 0.4rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--borde); }
+.elegir-especial .ayuda { margin: 0; }
+.botones-especial { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.botones-especial [aria-pressed="true"] { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento); }
 .hueco-acciones { display: flex; align-items: center; gap: 0.05rem; }
 .hueco-acciones > .icono { font-size: 1.15rem; padding: 0.2em 0.38em; }
 .hueco-espacio { flex: 1; }

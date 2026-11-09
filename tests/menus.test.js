@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   fechaISO, sumarDias, inicioSemana, diasDeSemana, esFechaISO, entradasDe, usosDeReceta, racionesFamilia,
-  conEntrada, sinEntrada, conRaciones, conOrden, sinReceta, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones, quitarRecetaDeMenus, guardarRacionesFamilia,
+  conEntrada, sinEntrada, conRaciones, conOrden, sinReceta, conEspecial, sinEspecial, especialDe, usosDeReceta as usos, marcarEspecial, quitarEspecial, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones, quitarRecetaDeMenus, guardarRacionesFamilia,
 } from '../js/menus.js';
 
 test('fechas locales: semana de lunes a domingo, también al cruzar de año y con cambio de hora', () => {
@@ -56,6 +56,25 @@ test('quitar y reordenar platos de un hueco', () => {
   assert.equal(sinEntrada(d, '2026-11-09', 'comida', 'r2'), null);
   assert.equal(sinReceta(d, 'r2').items.length, 3);
   assert.equal(sinReceta(d, 'nada'), null);
+});
+
+test('hueco especial: ocupa el hueco solo, admite nota y no se mezcla con recetas', () => {
+  let d = { version: 1, items: [E('2026-11-09', 'comida', 'r1')] };
+  d = conEspecial(d, { fecha: '2026-11-09', hueco: 'cena', especial: 'fuera', nota: '  en casa de la abuela ' });
+  assert.deepEqual(especialDe(d.items, '2026-11-09', 'cena'), { fecha: '2026-11-09', hueco: 'cena', especial: 'fuera', nota: 'en casa de la abuela', origen: 'manual' });
+  assert.equal(especialDe(d.items, '2026-11-09', 'comida'), null);
+  // Cambiar tipo o nota sustituye la marca; repetir lo mismo no cambia nada.
+  d = conEspecial(d, { fecha: '2026-11-09', hueco: 'cena', especial: 'libre', nota: '' });
+  assert.equal(entradasDe(d.items, '2026-11-09', 'cena').length, 1);
+  assert.equal(conEspecial(d, { fecha: '2026-11-09', hueco: 'cena', especial: 'libre' }), null);
+  assert.throws(() => conEntrada(d, E('2026-11-09', 'cena', 'r2')), /Libre \/ improvisar/);
+  assert.throws(() => conEspecial(d, { fecha: '2026-11-09', hueco: 'comida', especial: 'fuera' }), /ya tiene recetas/);
+  assert.throws(() => conEspecial(d, { fecha: '2026-11-09', hueco: 'cena', especial: 'merienda' }), /desconocido/);
+  assert.throws(() => conEspecial(d, { fecha: '2026-11-09', hueco: 'cena', especial: 'fuera', nota: 'x'.repeat(201) }), /200/);
+  assert.deepEqual(usos(d.items, 'r1').length, 1);
+  assert.equal(sinReceta(d, 'r1').items.length, 1);
+  assert.equal(sinEspecial(d, '2026-11-09', 'comida'), null);
+  assert.deepEqual(sinEspecial(d, '2026-11-09', 'cena').items, [E('2026-11-09', 'comida', 'r1')]);
 });
 
 test('las raciones solo cambian si la receta sigue en el hueco', () => {
@@ -119,6 +138,14 @@ test('añadir, cambiar, mover y quitar platos guardan en menus.json', async () =
     'Menú: Natillas en lugar de otra receta en la cena del 2026-11-09 (por Ana)',
     'Menú: quita Lentejas de la cena del 2026-11-09 (por Ana)',
   ]);
+});
+
+test('marcar y quitar un hueco especial guarda en menus.json', async () => {
+  const c = cliente({});
+  await marcarEspecial(c, { fecha: '2026-11-14', hueco: 'comida', especial: 'fuera', nota: 'Boda' }, 'Ana');
+  const datos = await quitarEspecial(c, { fecha: '2026-11-14', hueco: 'comida' }, 'Ana');
+  assert.deepEqual(datos.items, []);
+  assert.deepEqual(c.mensajes, ['Menú: Comemos fuera en la comida del 2026-11-14 (por Ana)', 'Menú: vacía la comida del 2026-11-14 (por Ana)']);
 });
 
 test('borrar una receta la quita de todos los menús; las raciones de la familia van a ajustes.json', async () => {
