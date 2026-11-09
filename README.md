@@ -18,6 +18,8 @@ npm run versionar  # tras cambiar CSS o JS: actualiza marcas de versión y CSP e
 | `js/listado.js` | Listado de recetas de la pantalla principal |
 | `js/filtros.js` | Búsqueda y filtros del listado |
 | `js/menus.js`, `js/vista-menu.js` | Menú semanal (`menus.json`) y ajustes de la familia (`ajustes.json`) |
+| `js/generador.js` | Reglas para rellenar el menú y «que elija la app» |
+| `js/compra.js`, `js/vista-compra.js` | Lista de la compra (`lista.json`) a partir del menú |
 | `js/ingredientes.js` | Mismo ingrediente escrito de otra forma (`claveIngrediente`) y sugerencias de nombres |
 | `js/fotos.js` | Fotos: reducir en el dispositivo, subir a `fotos/` del repo privado, ver con caché |
 | `js/escalado.js` | Escalar cantidades a otras raciones con redondeos de cocina |

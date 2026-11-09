@@ -112,6 +112,33 @@ Un hueco se puede marcar como «Comemos fuera» o «Libre / improvisar». Es una
 
 Quien recorra `items` para sumar ingredientes o contar recetas debe saltarse las entradas con `especial` (`esEspecial()` en `js/menus.js`).
 
+## lista.json
+
+La lista de la compra actual, compartida por la familia. Se genera desde el menú de unas fechas; lo añadido a mano se conserva al volver a generarla.
+
+```json
+{
+  "version": 1,
+  "desde": "2026-11-09",
+  "hasta": "2026-11-15",
+  "generada": "2026-11-09T18:00:00.000Z",
+  "items": [
+    { "id": "r:patata", "nombre": "patata", "cantidades": [{ "cantidad": 1.63, "unidad": "kg" }], "sinCantidad": false, "recetas": ["Tortilla de patatas", "Lentejas"], "manual": false },
+    { "id": "m:3f9a1c2b", "nombre": "pilas", "cantidades": [], "sinCantidad": true, "recetas": [], "manual": true }
+  ]
+}
+```
+
+| Campo | Tipo | Notas |
+| --- | --- | --- |
+| `desde`, `hasta` | `AAAA-MM-DD` | Fechas del menú con las que se generó. Faltan si solo hay cosas añadidas a mano. |
+| `id` | texto | `r:<clave del ingrediente>` si viene del menú; `m:<aleatorio>` si se añadió a mano. |
+| `nombre` | texto | El nombre más usado en las recetas para ese ingrediente (tomate y tomates se juntan). |
+| `cantidades` | lista de `{ cantidad, unidad }` | Ya escaladas a las raciones de cada comida y sumadas; varias si no se pueden sumar («400 g + 2 latas»). |
+| `sinCantidad` | sí/no | Solo «al gusto», pizca o chorro: se compra a ojo. |
+| `recetas` | lista de títulos | Para qué recetas es. |
+| `manual` | sí/no | Añadido a mano. |
+
 ## ajustes.json
 
 Ajustes compartidos por toda la familia (los de cada dispositivo, como el token, no salen de ese dispositivo). No es una lista.

@@ -15,6 +15,7 @@ import { pintarListado } from './listado.js';
 import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './ficha.js';
 import { inicioSemana, racionesFamilia, guardarAjustesFamilia, usosDeReceta, quitarRecetaDeMenus, leerFecha, esFechaISO } from './menus.js';
 import { prepararMenu, pintarMenu, hoyISO } from './vista-menu.js';
+import { prepararCompra, pintarCompra } from './vista-compra.js';
 
 function mostrarEstado(texto, esError = false) {
   const nodo = $('#estado');
@@ -31,12 +32,13 @@ function vistaEnDireccion() {
   if (ficha) return { tipo: 'receta', id: decodeURIComponent(ficha[1]) };
   const menu = location.hash.match(/^#menu(?:\/(\d{4}-\d{2}-\d{2}))?$/);
   if (menu) return { tipo: 'menu', lunes: inicioSemana(menu[1] && esFechaISO(menu[1]) ? menu[1] : hoyISO()) };
+  if (location.hash === '#compra') return { tipo: 'compra' };
   return { tipo: 'recetas' };
 }
 const idEnDireccion = () => (vistaEnDireccion().tipo === 'receta' ? vistaEnDireccion().id : null);
 
 /** Dónde estaba cada vista al salir de ella, para volver al mismo sitio. */
-const scrollPorVista = { recetas: 0, menu: 0 };
+const scrollPorVista = { recetas: 0, menu: 0, compra: 0 };
 let vistaAnterior = 'recetas';
 /** Búsqueda y filtros del listado: duran mientras la app está abierta (también al ir y volver de una ficha). */
 let filtros = filtrosVacios();
@@ -48,18 +50,22 @@ function render() {
   const vista = vistaEnDireccion();
   const enFicha = hayDatos && vista.tipo === 'receta';
   const enMenu = hayDatos && vista.tipo === 'menu';
+  const enCompra = hayDatos && vista.tipo === 'compra';
   $('#pestanas').hidden = !hayDatos || enFicha;
-  $('#recetario').hidden = !hayDatos || enFicha || enMenu;
+  $('#recetario').hidden = !hayDatos || enFicha || enMenu || enCompra;
   $('#vista-menu').hidden = !enMenu;
+  $('#vista-compra').hidden = !enCompra;
   $('#vista-ficha').hidden = !enFicha;
-  $('#btn-nueva').hidden = !hayDatos || enFicha || enMenu;
-  $('#pestana-recetas').toggleAttribute('aria-current', !enMenu);
+  $('#btn-nueva').hidden = !hayDatos || enFicha || enMenu || enCompra;
+  $('#pestana-recetas').toggleAttribute('aria-current', !enMenu && !enCompra);
   $('#pestana-menu').toggleAttribute('aria-current', enMenu);
+  $('#pestana-compra').toggleAttribute('aria-current', enCompra);
   pantallaEncendida(enFicha);
   if (!hayDatos) return;
   const recetas = app.almacen.items('recetas');
   if (enFicha) return pintarFicha(recetas.find((r) => r.id === vista.id));
   if (enMenu) return pintarMenu(vista.lunes);
+  if (enCompra) return pintarCompra();
   const visibles = filtrarRecetas(recetas, filtros);
   const filtrando = visibles.length !== recetas.length || filtros.texto.trim() !== '' || filtrosActivos(filtros) > 0;
   const total = recetas.length === 1 ? '1 receta' : `${recetas.length} recetas`;
@@ -329,6 +335,7 @@ function iniciar() {
     });
   }
   prepararMenu(app, render);
+  prepararCompra(app, render);
 
   window.addEventListener('online', recargar);
   window.addEventListener('offline', () => mostrarEstado('Sin conexión. Puedes consultar, pero no guardar cambios.'));

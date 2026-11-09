@@ -5,6 +5,7 @@ const CLAVE = 'coquere.cache';
 export const FICHEROS = [
   { nombre: 'recetas' },
   { nombre: 'menus' },
+  { nombre: 'lista' },
   { nombre: 'ajustes', lista: false },
 ];
 

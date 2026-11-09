@@ -283,7 +283,7 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 
 /* Pestañas Recetas | Menú */
 .pestanas { display: flex; gap: 0.25rem; margin: 0.6rem 0 0; background: var(--superficie); border: 1px solid var(--borde); border-radius: 999px; padding: 0.2rem; }
-.pestanas a { flex: 1; text-align: center; padding: 0.45em; border-radius: 999px; color: var(--texto); text-decoration: none; font-weight: 500; }
+.pestanas a { flex: 1; min-width: 0; text-align: center; padding: 0.45em; border-radius: 999px; color: var(--texto); text-decoration: none; font-weight: 500; }
 .pestanas a[aria-current] { background: var(--acento); color: var(--acento-texto); }
 
 /* Menú semanal */
@@ -349,3 +349,19 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 .aviso-raciones { margin: 0 0 0.5rem; padding: 0.4rem 0.7rem; border-radius: 8px; background: var(--superficie); border-left: 3px solid var(--acento); font-size: 0.95rem; }
 .aviso-raciones .enlace { padding: 0; }
 .redondeo { color: var(--suave); font-size: 0.85rem; }
+
+/* Lista de la compra */
+.barra-compra { display: flex; align-items: center; gap: 0.5rem; margin: 0.6rem 0 0.5rem; }
+.barra-compra p { flex: 1; margin: 0; }
+.barra-compra .secundario { padding: 0.3em 0.9em; font-size: 0.9rem; white-space: nowrap; }
+.anadir-compra { display: flex; gap: 0.4rem; margin: 0 0 0.6rem; }
+.anadir-compra input { flex: 1; min-width: 0; }
+.lista-compra { list-style: none; margin: 0; padding: 0; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); }
+.lista-compra:empty { display: none; }
+.linea-compra { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 0 0.5rem; padding: 0.45rem 0.4rem 0.45rem 0.8rem; }
+.linea-compra + .linea-compra { border-top: 1px solid var(--borde); }
+.linea-compra .nombre { font-weight: 600; overflow-wrap: anywhere; }
+.linea-compra .cantidad { color: var(--texto); white-space: nowrap; text-align: right; }
+.linea-compra .para { grid-column: 1 / -1; color: var(--suave); font-size: 0.85rem; }
+.linea-compra .icono { font-size: 1.05rem; padding: 0.2em 0.45em; }
+.compra-vacia { color: var(--suave); text-align: center; padding: 1.5rem 0.5rem; }

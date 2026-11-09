@@ -8,11 +8,12 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-hYwauiOQ051bJS4JDnVmLqiMdAJQ7fdmTOoxc6uixAE='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=5c64da1c09">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-jof+E649JAj1nYfXKGNzOTM2w9eicBK2epud322LWqE='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=2d15beb498">
   <script type="importmap">
   { "imports": {
-      "./js/almacen.js": "./js/almacen.js?v=0854bcde84",
+      "./js/almacen.js": "./js/almacen.js?v=2c2105c5d6",
+      "./js/compra.js": "./js/compra.js?v=de898192d0",
       "./js/config.js": "./js/config.js?v=640e00eb72",
       "./js/dom.js": "./js/dom.js?v=749c587cc2",
       "./js/escalado.js": "./js/escalado.js?v=2ed029e492",
@@ -25,15 +26,16 @@
       "./js/github.js": "./js/github.js?v=fd3d2078e2",
       "./js/ingredientes.js": "./js/ingredientes.js?v=b734b56623",
       "./js/listado.js": "./js/listado.js?v=f991ec5e74",
-      "./js/main.js": "./js/main.js?v=77716984f0",
+      "./js/main.js": "./js/main.js?v=d0e1339342",
       "./js/menus.js": "./js/menus.js?v=69235cdc4b",
       "./js/receta.js": "./js/receta.js?v=3304721f62",
       "./js/recetas.js": "./js/recetas.js?v=89fc9e0555",
       "./js/texto.js": "./js/texto.js?v=847e5e4645",
+      "./js/vista-compra.js": "./js/vista-compra.js?v=f24840e2af",
       "./js/vista-menu.js": "./js/vista-menu.js?v=e63197a9b5"
   } }
   </script>
-  <script type="module" src="js/main.js?v=77716984f0"></script>
+  <script type="module" src="js/main.js?v=d0e1339342"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -49,6 +51,7 @@
     <nav id="pestanas" class="pestanas" aria-label="Secciones" hidden>
       <a id="pestana-recetas" href="#">Recetas</a>
       <a id="pestana-menu" href="#menu">Menú</a>
+      <a id="pestana-compra" href="#compra">Compra</a>
     </nav>
     <p id="estado" class="estado" role="status"></p>
     <section id="recetario" hidden>
@@ -71,6 +74,17 @@
         <button id="semana-rellenar" class="secundario" type="button">✨ Rellenar huecos</button>
       </div>
       <div id="semana" class="semana"></div>
+    </section>
+    <section id="vista-compra" hidden>
+      <div class="barra-compra">
+        <p id="compra-rango" class="ayuda"></p>
+        <button id="compra-generar" class="secundario" type="button">🛒 Generar lista</button>
+      </div>
+      <form id="compra-anadir" class="anadir-compra">
+        <input name="texto" maxlength="80" placeholder="Añadir algo: pilas, papel de cocina…" aria-label="Añadir a la lista" autocomplete="off" enterkeyhint="done">
+        <button type="submit">Añadir</button>
+      </form>
+      <ul id="compra-lista" class="lista-compra"></ul>
     </section>
     <section id="vista-ficha" hidden>
       <div class="barra-ficha">
@@ -193,6 +207,25 @@
         <span class="hueco"></span>
         <button id="rellenar-cancelar" type="button" class="secundario">Cancelar</button>
         <button id="rellenar-ok" type="submit">Rellenar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Generar la lista de la compra -->
+  <dialog id="dlg-compra">
+    <form id="form-compra" class="formulario" novalidate>
+      <h2>Lista de la compra</h2>
+      <p class="ayuda">Junta los ingredientes de las recetas del menú en estas fechas, con las raciones de cada comida. Sustituye la lista actual, pero lo que añadiste a mano se queda.</p>
+      <div class="dos">
+        <label>Desde <input name="desde" type="date" required></label>
+        <label>Hasta <input name="hasta" type="date" required></label>
+      </div>
+      <p id="compra-cuantas" class="ayuda"></p>
+      <p id="compra-error" class="error" role="alert"></p>
+      <div class="botones">
+        <span class="hueco"></span>
+        <button id="compra-cancelar" type="button" class="secundario">Cancelar</button>
+        <button id="compra-ok" type="submit">Generar</button>
       </div>
     </form>
   </dialog>
