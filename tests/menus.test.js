@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  fechaISO, sumarDias, inicioSemana, diasDeSemana, esFechaISO, entradaDe, usosDeReceta, racionesFamilia,
-  conEntrada, sinEntrada, conRaciones, sinReceta, ponerReceta, cambiarRaciones, quitarRecetaDeMenus, guardarRacionesFamilia,
+  fechaISO, sumarDias, inicioSemana, diasDeSemana, esFechaISO, entradasDe, usosDeReceta, racionesFamilia,
+  conEntrada, sinEntrada, conRaciones, conOrden, sinReceta, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones, quitarRecetaDeMenus, guardarRacionesFamilia,
 } from '../js/menus.js';
 
 test('fechas locales: semana de lunes a domingo, también al cruzar de año y con cambio de hora', () => {
@@ -20,26 +20,47 @@ test('fechas locales: semana de lunes a domingo, también al cruzar de año y co
 
 const E = (fecha, hueco, receta, raciones = 4) => ({ fecha, hueco, receta, raciones, origen: 'manual' });
 
-test('poner, cambiar y quitar entradas: una por fecha y hueco, en orden', () => {
+test('un hueco puede tener varias recetas, en orden y sin repetir', () => {
   let d = { version: 1, items: [] };
   d = conEntrada(d, E('2026-11-10', 'cena', 'r2'));
   d = conEntrada(d, E('2026-11-09', 'cena', 'r1'));
   d = conEntrada(d, E('2026-11-09', 'comida', 'r3'));
-  assert.deepEqual(d.items.map((e) => `${e.fecha} ${e.hueco}`), ['2026-11-09 comida', '2026-11-09 cena', '2026-11-10 cena']);
-  d = conEntrada(d, E('2026-11-09', 'cena', 'r2', 6));
-  assert.equal(d.items.length, 3);
-  assert.deepEqual(entradaDe(d.items, '2026-11-09', 'cena'), E('2026-11-09', 'cena', 'r2', 6));
-  assert.equal(conEntrada(d, E('2026-11-09', 'cena', 'r2', 6)), null);
-  assert.deepEqual(usosDeReceta(d.items, 'r2').map((e) => e.fecha), ['2026-11-09', '2026-11-10']);
-  assert.equal(sinEntrada(d, '2026-11-11', 'cena'), null);
-  assert.equal(sinEntrada(d, '2026-11-09', 'cena').items.length, 2);
-  assert.equal(sinReceta(d, 'r2').items.length, 1);
+  d = conEntrada(d, E('2026-11-09', 'cena', 'r4'));
+  assert.deepEqual(d.items.map((e) => `${e.fecha} ${e.hueco} ${e.receta}`), ['2026-11-09 comida r3', '2026-11-09 cena r1', '2026-11-09 cena r4', '2026-11-10 cena r2']);
+  assert.deepEqual(entradasDe(d.items, '2026-11-09', 'cena').map((e) => e.receta), ['r1', 'r4']);
+  assert.deepEqual(entradasDe(d.items, '2026-11-11', 'cena'), []);
+  // La misma receta otra vez actualiza su entrada en el sitio, no la duplica.
+  d = conEntrada(d, E('2026-11-09', 'cena', 'r1', 6));
+  assert.deepEqual(entradasDe(d.items, '2026-11-09', 'cena').map((e) => `${e.receta}:${e.raciones}`), ['r1:6', 'r4:4']);
+  assert.equal(conEntrada(d, E('2026-11-09', 'cena', 'r1', 6)), null);
+  assert.deepEqual(usosDeReceta(d.items, 'r2').map((e) => e.fecha), ['2026-11-10']);
+});
+
+test('cambiar una receta por otra mantiene su sitio en el hueco', () => {
+  let d = { version: 1, items: [E('2026-11-09', 'cena', 'r1'), E('2026-11-09', 'cena', 'r4')] };
+  d = conEntrada(d, E('2026-11-09', 'cena', 'r9', 3), { sustituye: 'r1' });
+  assert.deepEqual(d.items.map((e) => e.receta), ['r9', 'r4']);
+  assert.throws(() => conEntrada(d, E('2026-11-09', 'cena', 'r4'), { sustituye: 'r9' }), /ya está en este hueco/);
+  // Si la receta a sustituir ya no está (otro dispositivo la quitó), la nueva va al final.
+  assert.deepEqual(conEntrada(d, E('2026-11-09', 'cena', 'r7'), { sustituye: 'r1' }).items.map((e) => e.receta), ['r9', 'r4', 'r7']);
+});
+
+test('quitar y reordenar platos de un hueco', () => {
+  const d = { version: 1, items: [E('2026-11-09', 'comida', 'r0'), E('2026-11-09', 'cena', 'r1'), E('2026-11-09', 'cena', 'r2'), E('2026-11-09', 'cena', 'r3')] };
+  assert.deepEqual(conOrden(d, '2026-11-09', 'cena', 'r3', -1).items.map((e) => e.receta), ['r0', 'r1', 'r3', 'r2']);
+  assert.deepEqual(conOrden(d, '2026-11-09', 'cena', 'r1', +1).items.map((e) => e.receta), ['r0', 'r2', 'r1', 'r3']);
+  assert.equal(conOrden(d, '2026-11-09', 'cena', 'r1', -1), null);
+  assert.equal(conOrden(d, '2026-11-09', 'cena', 'r3', +1), null);
+  assert.equal(conOrden(d, '2026-11-09', 'cena', 'nada', +1), null);
+  assert.deepEqual(sinEntrada(d, '2026-11-09', 'cena', 'r2').items.map((e) => e.receta), ['r0', 'r1', 'r3']);
+  assert.equal(sinEntrada(d, '2026-11-09', 'comida', 'r2'), null);
+  assert.equal(sinReceta(d, 'r2').items.length, 3);
   assert.equal(sinReceta(d, 'nada'), null);
 });
 
-test('las raciones solo cambian si el hueco sigue teniendo la misma receta', () => {
-  const d = { version: 1, items: [E('2026-11-09', 'cena', 'r1')] };
-  assert.equal(conRaciones(d, '2026-11-09', 'cena', 'r1', 6).items[0].raciones, 6);
+test('las raciones solo cambian si la receta sigue en el hueco', () => {
+  const d = { version: 1, items: [E('2026-11-09', 'cena', 'r1'), E('2026-11-09', 'cena', 'r2')] };
+  assert.deepEqual(conRaciones(d, '2026-11-09', 'cena', 'r2', 6).items.map((e) => e.raciones), [4, 6]);
   assert.equal(conRaciones(d, '2026-11-09', 'cena', 'otra', 6), null);
   assert.equal(conRaciones(d, '2026-11-09', 'comida', 'r1', 6), null);
 });
@@ -83,6 +104,21 @@ test('poner receta y cambiar raciones guardan en menus.json, respetando lo que o
   const datos = await cambiarRaciones(c, { fecha: '2026-11-09', hueco: 'cena', receta: 'r1', raciones: 6 }, 'Ana');
   assert.deepEqual(datos.items, [E('2026-11-09', 'cena', 'r1', 6), E('2026-11-10', 'comida', 'rOtro')]);
   assert.deepEqual(c.mensajes, ['Menú: Lentejas para la cena del 2026-11-09 (por Ana)', 'Menú: 6 raciones para la cena del 2026-11-09 (por Ana)']);
+});
+
+test('añadir, cambiar, mover y quitar platos guardan en menus.json', async () => {
+  const c = cliente({ 'menus.json': { version: 1, items: [E('2026-11-09', 'cena', 'r1')] } });
+  await ponerReceta(c, { fecha: '2026-11-09', hueco: 'cena', receta: { id: 'r2', titulo: 'Flan' }, raciones: 4 }, 'Ana');
+  await moverEnMenu(c, { fecha: '2026-11-09', hueco: 'cena', receta: { id: 'r2', titulo: 'Flan' } }, -1, 'Ana');
+  await ponerReceta(c, { fecha: '2026-11-09', hueco: 'cena', receta: { id: 'r3', titulo: 'Natillas' }, raciones: 4, sustituye: 'r2' }, 'Ana');
+  const datos = await quitarDeMenu(c, { fecha: '2026-11-09', hueco: 'cena', receta: { id: 'r1', titulo: 'Lentejas' } }, 'Ana');
+  assert.deepEqual(datos.items, [E('2026-11-09', 'cena', 'r3')]);
+  assert.deepEqual(c.mensajes, [
+    'Menú: Flan para la cena del 2026-11-09 (por Ana)',
+    'Menú: reordena la cena del 2026-11-09 (por Ana)',
+    'Menú: Natillas en lugar de otra receta en la cena del 2026-11-09 (por Ana)',
+    'Menú: quita Lentejas de la cena del 2026-11-09 (por Ana)',
+  ]);
 });
 
 test('borrar una receta la quita de todos los menús; las raciones de la familia van a ajustes.json', async () => {

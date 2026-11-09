@@ -1,7 +1,9 @@
 // Menús planificados (menus.json) y ajustes compartidos de la familia (ajustes.json).
 //
 // menus.json: { version: 1, items: [{ fecha: '2026-11-09', hueco: 'comida' | 'cena', receta: '<id>', raciones: 4, origen: 'manual' | 'auto' }] }
-// Como mucho una entrada por fecha y hueco. `origen`: 'manual' si la eligió alguien a mano (PL-02 no la cambia).
+// Un hueco (fecha + comida/cena) puede tener varias entradas, una por receta (sin repetir receta en el mismo hueco).
+// El orden de las entradas de un hueco en el fichero es el orden en que se muestran.
+// `origen`: 'manual' si la eligió alguien a mano (PL-02 no la cambia).
 
 export const FICHERO_MENUS = 'menus.json';
 export const FICHERO_AJUSTES = 'ajustes.json';
@@ -41,7 +43,13 @@ export const esFechaISO = (t) => typeof t === 'string' && /^\d{4}-\d{2}-\d{2}$/.
 
 // ---------- Consultas
 
-export const entradaDe = (menus, fecha, hueco) => menus.find((e) => e.fecha === fecha && e.hueco === hueco) ?? null;
+const delHueco = (fecha, hueco) => (e) => e.fecha === fecha && e.hueco === hueco;
+
+/** Entradas de un hueco, en su orden. */
+export const entradasDe = (menus, fecha, hueco) => menus.filter(delHueco(fecha, hueco));
+
+const mismaEntrada = (fecha, hueco, receta) => (e) => e.fecha === fecha && e.hueco === hueco && e.receta === receta;
+const ordenar = (items) => items.sort((a, b) => a.fecha.localeCompare(b.fecha) || HUECOS.indexOf(a.hueco) - HUECOS.indexOf(b.hueco)); // estable: respeta el orden dentro del hueco
 
 /** Huecos en los que aparece una receta, por fecha. */
 export const usosDeReceta = (menus, idReceta) =>
@@ -64,28 +72,50 @@ export function validarEntrada(e) {
 
 // ---------- Cambios (puros: devuelven el fichero nuevo, o null si no cambia nada)
 
-/** Pone (o sustituye) la entrada de un hueco. */
-export function conEntrada(datos, entrada) {
+/**
+ * Pone una receta en un hueco. Si ya estaba, actualiza su entrada en el mismo sitio; si no, va al final del hueco.
+ * Con `sustituye` (id de receta), ocupa el lugar de esa otra receta del hueco (o va al final si ya no está).
+ */
+export function conEntrada(datos, entrada, { sustituye = null } = {}) {
   const errores = validarEntrada(entrada);
   if (errores.length) throw new Error(errores.join(' '));
-  const actual = entradaDe(datos.items, entrada.fecha, entrada.hueco);
-  if (actual && JSON.stringify(actual) === JSON.stringify(entrada)) return null;
-  const items = datos.items.filter((e) => !(e.fecha === entrada.fecha && e.hueco === entrada.hueco));
-  items.push(entrada);
-  items.sort((a, b) => a.fecha.localeCompare(b.fecha) || HUECOS.indexOf(a.hueco) - HUECOS.indexOf(b.hueco));
-  return { ...datos, items };
+  const { fecha, hueco, receta } = entrada;
+  const items = [...datos.items];
+  const i = items.findIndex(mismaEntrada(fecha, hueco, receta));
+  const j = sustituye && sustituye !== receta ? items.findIndex(mismaEntrada(fecha, hueco, sustituye)) : -1;
+  if (j >= 0) {
+    if (i >= 0) throw new Error('Esa receta ya está en este hueco.');
+    items[j] = entrada;
+  } else if (i >= 0) {
+    if (JSON.stringify(items[i]) === JSON.stringify(entrada)) return null;
+    items[i] = entrada;
+  } else {
+    items.push(entrada);
+  }
+  return { ...datos, items: ordenar(items) };
 }
 
-export function sinEntrada(datos, fecha, hueco) {
-  if (!entradaDe(datos.items, fecha, hueco)) return null;
-  return { ...datos, items: datos.items.filter((e) => !(e.fecha === fecha && e.hueco === hueco)) };
+export function sinEntrada(datos, fecha, hueco, receta) {
+  if (!datos.items.some(mismaEntrada(fecha, hueco, receta))) return null;
+  return { ...datos, items: datos.items.filter((e) => !mismaEntrada(fecha, hueco, receta)(e)) };
 }
 
-/** Cambia las raciones de un hueco, si sigue teniendo la misma receta (otro dispositivo pudo cambiarla). */
+/** Cambia las raciones de una receta de un hueco, si sigue ahí (otro dispositivo pudo quitarla). */
 export function conRaciones(datos, fecha, hueco, receta, raciones) {
-  const actual = entradaDe(datos.items, fecha, hueco);
-  if (!actual || actual.receta !== receta) return null;
+  const actual = datos.items.find(mismaEntrada(fecha, hueco, receta));
+  if (!actual) return null;
   return conEntrada(datos, { ...actual, raciones });
+}
+
+/** Sube (−1) o baja (+1) una receta dentro de su hueco. */
+export function conOrden(datos, fecha, hueco, receta, delta) {
+  const items = [...datos.items];
+  const posiciones = items.map((e, i) => (delHueco(fecha, hueco)(e) ? i : -1)).filter((i) => i >= 0);
+  const k = posiciones.findIndex((i) => items[i].receta === receta);
+  const otro = posiciones[k + delta];
+  if (k < 0 || otro === undefined) return null;
+  [items[posiciones[k]], items[otro]] = [items[otro], items[posiciones[k]]];
+  return { ...datos, items };
 }
 
 export function sinReceta(datos, idReceta) {
@@ -97,14 +127,21 @@ export function sinReceta(datos, idReceta) {
 
 const nombreHueco = (fecha, hueco) => `${hueco} del ${fecha}`;
 
-export async function ponerReceta(cliente, { fecha, hueco, receta, raciones }, autor) {
+/** Añade una receta a un hueco, o la pone en lugar de `sustituye` (id de otra receta del hueco). */
+export async function ponerReceta(cliente, { fecha, hueco, receta, raciones, sustituye = null }, autor) {
   const entrada = { fecha, hueco, receta: receta.id, raciones, origen: 'manual' };
-  const { datos } = await cliente.actualizar(FICHERO_MENUS, (d) => conEntrada(d, entrada), `Menú: ${receta.titulo} para la ${nombreHueco(fecha, hueco)} (por ${autor})`);
+  const accion = sustituye ? `${receta.titulo} en lugar de otra receta en la` : `${receta.titulo} para la`;
+  const { datos } = await cliente.actualizar(FICHERO_MENUS, (d) => conEntrada(d, entrada, { sustituye }), `Menú: ${accion} ${nombreHueco(fecha, hueco)} (por ${autor})`);
   return datos;
 }
 
-export async function quitarDeMenu(cliente, fecha, hueco, autor) {
-  const { datos } = await cliente.actualizar(FICHERO_MENUS, (d) => sinEntrada(d, fecha, hueco), `Menú: vacía la ${nombreHueco(fecha, hueco)} (por ${autor})`);
+export async function quitarDeMenu(cliente, { fecha, hueco, receta }, autor) {
+  const { datos } = await cliente.actualizar(FICHERO_MENUS, (d) => sinEntrada(d, fecha, hueco, receta.id), `Menú: quita ${receta.titulo} de la ${nombreHueco(fecha, hueco)} (por ${autor})`);
+  return datos;
+}
+
+export async function moverEnMenu(cliente, { fecha, hueco, receta }, delta, autor) {
+  const { datos } = await cliente.actualizar(FICHERO_MENUS, (d) => conOrden(d, fecha, hueco, receta.id, delta), `Menú: reordena la ${nombreHueco(fecha, hueco)} (por ${autor})`);
   return datos;
 }
 

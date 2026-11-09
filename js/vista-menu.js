@@ -1,6 +1,6 @@
 // Vista del menú: una semana de lunes a domingo, con comida y cena cada día.
 
-import { HUECOS, RACIONES_MAX, fechaISO, sumarDias, inicioSemana, diasDeSemana, leerFecha, entradaDe, racionesFamilia, ponerReceta, quitarDeMenu, cambiarRaciones } from './menus.js';
+import { HUECOS, RACIONES_MAX, fechaISO, sumarDias, inicioSemana, diasDeSemana, leerFecha, entradasDe, racionesFamilia, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones } from './menus.js';
 import { filtrarRecetas, filtrosVacios } from './filtros.js';
 import { compararTitulos } from './texto.js';
 import { $, el, aviso, ocupado } from './dom.js';
@@ -8,9 +8,9 @@ import { $, el, aviso, ocupado } from './dom.js';
 let app = null;
 let alCambiar = () => {};
 let lunesActual = null;
-/** Hueco que se está eligiendo: { fecha, hueco }. */
+/** Hueco que se está eligiendo: { fecha, hueco, sustituye } (sustituye: id de la receta que se cambia, o null para añadir). */
 let eligiendo = null;
-/** Raciones tocadas con −/+ que aún no se han guardado, por «fecha|hueco» (se guardan al dejar de tocar). */
+/** Raciones tocadas con −/+ que aún no se han guardado, por «fecha|hueco|receta» (se guardan al dejar de tocar). */
 const racionesPendientes = new Map();
 const temporizadores = new Map();
 
@@ -48,8 +48,10 @@ async function guardar(boton, accion, textoOk) {
 
 // ---------- Raciones con −/+
 
+const claveEntrada = (e) => `${e.fecha}|${e.hueco}|${e.receta}`;
+
 function tocarRaciones(entrada, delta) {
-  const clave = `${entrada.fecha}|${entrada.hueco}`;
+  const clave = claveEntrada(entrada);
   const ahora = racionesPendientes.get(clave) ?? entrada.raciones;
   const nuevas = Math.min(RACIONES_MAX, Math.max(1, ahora + delta));
   racionesPendientes.set(clave, nuevas);
@@ -67,26 +69,28 @@ function tocarRaciones(entrada, delta) {
 
 // ---------- Pintar la semana
 
-function hueco(fecha, h, recetas) {
-  const entrada = entradaDe(app.almacen.items('menus'), fecha, h);
-  const etiqueta = el('span', { class: 'hueco-nombre' }, NOMBRE_HUECO[h]);
-  if (!entrada) {
-    return el('div', { class: 'hueco libre' }, etiqueta,
-      el('button', { type: 'button', class: 'secundario elegir', onclick: () => abrirElegir(fecha, h) }, '＋ Elegir receta'));
-  }
+/** Una receta dentro de un hueco, con sus raciones y acciones. */
+function plato(entrada, recetas, posicion, total) {
+  const { fecha, hueco: h } = entrada;
   const receta = recetas.get(entrada.receta);
-  const raciones = racionesPendientes.get(`${fecha}|${h}`) ?? entrada.raciones;
+  const titulo = receta?.titulo ?? 'Receta borrada';
+  const raciones = racionesPendientes.get(claveEntrada(entrada)) ?? entrada.raciones;
+  const objetivo = { fecha, hueco: h, receta: receta ?? { id: entrada.receta, titulo } };
   const quitar = el('button', {
-    type: 'button', class: 'icono quitar', title: 'Vaciar este hueco', 'aria-label': `Vaciar ${NOMBRE_HUECO[h].toLowerCase()} del ${nombreDia(fecha)}`,
-    onclick: (e) => guardar(e.currentTarget, () => quitarDeMenu(app.cliente, fecha, h, app.config.nombre)),
+    type: 'button', class: 'icono quitar', title: 'Quitar del menú', 'aria-label': `Quitar ${titulo} de la ${NOMBRE_HUECO[h].toLowerCase()} del ${nombreDia(fecha)}`,
+    onclick: (e) => guardar(e.currentTarget, () => quitarDeMenu(app.cliente, objetivo, app.config.nombre)),
   }, '✕');
+  const mover = (delta, simbolo, texto) =>
+    total > 1 && el('button', {
+      type: 'button', class: 'icono', title: texto, 'aria-label': `${texto}: ${titulo}`, disabled: posicion + delta < 0 || posicion + delta >= total,
+      onclick: (e) => guardar(e.currentTarget, () => moverEnMenu(app.cliente, objetivo, delta, app.config.nombre)),
+    }, simbolo);
   if (!receta) {
-    return el('div', { class: 'hueco' }, etiqueta, el('span', { class: 'hueco-receta borrada' }, 'Receta borrada'), el('div', { class: 'hueco-acciones' }, quitar));
+    return el('div', { class: 'plato' }, el('span', { class: 'hueco-receta borrada' }, titulo), el('div', { class: 'hueco-acciones' }, el('span', { class: 'hueco-espacio' }), quitar));
   }
   return el(
     'div',
-    { class: 'hueco' },
-    etiqueta,
+    { class: 'plato' },
     el('a', { class: 'hueco-receta', href: `#receta/${encodeURIComponent(receta.id)}` }, receta.titulo),
     el(
       'div',
@@ -97,9 +101,23 @@ function hueco(fecha, h, recetas) {
         el('button', { type: 'button', class: 'icono', 'aria-label': 'Una ración más', disabled: raciones >= RACIONES_MAX, onclick: () => tocarRaciones(entrada, +1) }, '+'),
       ),
       el('span', { class: 'hueco-espacio' }),
-      el('button', { type: 'button', class: 'icono', title: 'Cambiar por otra receta', 'aria-label': 'Cambiar receta', onclick: () => abrirElegir(fecha, h) }, '⇄'),
+      mover(-1, '↑', 'Subir'),
+      mover(+1, '↓', 'Bajar'),
+      el('button', { type: 'button', class: 'icono', title: 'Cambiar por otra receta', 'aria-label': `Cambiar ${receta.titulo} por otra receta`, onclick: () => abrirElegir(fecha, h, receta.id) }, '⇄'),
       quitar,
     ),
+  );
+}
+
+function hueco(fecha, h, recetas) {
+  const entradas = entradasDe(app.almacen.items('menus'), fecha, h);
+  const etiqueta = el('span', { class: 'hueco-nombre' }, NOMBRE_HUECO[h]);
+  const anadir = el('button', { type: 'button', class: 'secundario elegir', onclick: () => abrirElegir(fecha, h) }, entradas.length ? '＋ Añadir plato' : '＋ Elegir receta');
+  return el(
+    'div',
+    { class: `hueco${entradas.length ? '' : ' libre'}` },
+    etiqueta,
+    el('div', { class: 'platos' }, entradas.map((e, i) => plato(e, recetas, i, entradas.length)), anadir),
   );
 }
 
@@ -125,33 +143,38 @@ export function pintarMenu(lunes) {
 
 function pintarOpciones() {
   const texto = $('#elegir-buscar').value;
+  const { fecha, hueco: h, sustituye } = eligiendo;
+  const yaEstan = new Set(entradasDe(app.almacen.items('menus'), fecha, h).map((e) => e.receta).filter((id) => id !== sustituye));
   const recetas = filtrarRecetas(app.almacen.items('recetas'), { ...filtrosVacios(), texto }).sort((a, b) => compararTitulos(a.titulo, b.titulo));
   $('#elegir-lista').replaceChildren(
     ...(recetas.length
       ? recetas.map((r) =>
-          el('li', {}, el('button', { type: 'button', class: 'opcion-receta', onclick: (e) => elegir(r, e.currentTarget) },
+          el('li', {}, el('button', { type: 'button', class: 'opcion-receta', disabled: yaEstan.has(r.id) || r.id === sustituye, onclick: (e) => elegir(r, e.currentTarget) },
             el('span', { class: 'titulo' }, r.titulo),
-            r.categorias.length > 0 && el('span', { class: 'ayuda' }, r.categorias.join(', ')),
+            (yaEstan.has(r.id) || r.id === sustituye)
+              ? el('span', { class: 'ayuda' }, 'Ya está en este hueco')
+              : r.categorias.length > 0 && el('span', { class: 'ayuda' }, r.categorias.join(', ')),
           )))
       : [el('li', { class: 'ayuda' }, app.almacen.items('recetas').length ? 'Ninguna receta coincide.' : 'Aún no hay recetas: crea alguna primero.')]),
   );
 }
 
-function abrirElegir(fecha, h) {
-  eligiendo = { fecha, hueco: h };
-  $('#elegir-titulo').textContent = `${NOMBRE_HUECO[h]} · ${nombreDia(fecha)}`;
+function abrirElegir(fecha, h, sustituye = null) {
+  eligiendo = { fecha, hueco: h, sustituye };
+  const accion = sustituye ? 'cambiar receta' : entradasDe(app.almacen.items('menus'), fecha, h).length ? 'añadir plato' : '';
+  $('#elegir-titulo').textContent = `${NOMBRE_HUECO[h]} · ${nombreDia(fecha)}${accion ? ` · ${accion}` : ''}`;
   $('#elegir-buscar').value = '';
   pintarOpciones();
   $('#dlg-elegir').showModal();
 }
 
 async function elegir(receta, boton) {
-  const { fecha, hueco: h } = eligiendo;
-  const anterior = entradaDe(app.almacen.items('menus'), fecha, h);
-  // Al cambiar de receta se mantienen las raciones elegidas; en un hueco nuevo, las de la familia.
+  const { fecha, hueco: h, sustituye } = eligiendo;
+  const anterior = sustituye && entradasDe(app.almacen.items('menus'), fecha, h).find((e) => e.receta === sustituye);
+  // Al cambiar de receta se mantienen las raciones elegidas; en un plato nuevo, las de la familia.
   const raciones = anterior?.raciones ?? racionesFamilia(app.almacen.datos('ajustes'));
   for (const b of $('#elegir-lista').querySelectorAll('button')) b.disabled = true;
-  await guardar(boton, () => ponerReceta(app.cliente, { fecha, hueco: h, receta, raciones }, app.config.nombre), `${receta.titulo}: ${NOMBRE_HUECO[h].toLowerCase()} del ${nombreDia(fecha)}`);
+  await guardar(boton, () => ponerReceta(app.cliente, { fecha, hueco: h, receta, raciones, sustituye }, app.config.nombre), `${receta.titulo}: ${NOMBRE_HUECO[h].toLowerCase()} del ${nombreDia(fecha)}`);
   $('#dlg-elegir').close();
 }
 

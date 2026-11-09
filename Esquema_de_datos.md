@@ -76,7 +76,7 @@ Añadir una unidad es seguro (basta con incluirla en `UNIDADES`); quitarla o ren
 
 ## menus.json
 
-Una entrada por día y hueco (comida o cena); un hueco vacío simplemente no tiene entrada.
+Una entrada por receta planificada. Un hueco (día + comida o cena) puede tener varias recetas, cada una con sus raciones; no se repite la misma receta en un hueco. El orden de las entradas de un hueco en el fichero es el orden en que se muestran (primer plato, segundo…). Un hueco vacío simplemente no tiene entradas.
 
 ```json
 {
