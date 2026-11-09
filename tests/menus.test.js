@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   fechaISO, sumarDias, inicioSemana, diasDeSemana, esFechaISO, entradasDe, usosDeReceta, racionesFamilia,
-  conEntrada, sinEntrada, conRaciones, conOrden, sinReceta, conEspecial, sinEspecial, especialDe, usosDeReceta as usos, marcarEspecial, quitarEspecial, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones, quitarRecetaDeMenus, guardarRacionesFamilia,
+  conEntrada, sinEntrada, conRaciones, conOrden, sinReceta, conEspecial, sinEspecial, especialDe, usosDeReceta as usos, marcarEspecial, quitarEspecial, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones, quitarRecetaDeMenus, guardarAjustesFamilia,
 } from '../js/menus.js';
 
 test('fechas locales: semana de lunes a domingo, también al cruzar de año y con cambio de hora', () => {
@@ -152,7 +152,9 @@ test('borrar una receta la quita de todos los menús; las raciones de la familia
   const c = cliente({ 'menus.json': { version: 1, items: [E('2026-11-09', 'cena', 'r1'), E('2026-11-12', 'comida', 'r1'), E('2026-11-10', 'cena', 'r2')] } });
   const datos = await quitarRecetaDeMenus(c, { id: 'r1', titulo: 'Lentejas' }, 'Ana');
   assert.deepEqual(datos.items.map((e) => e.receta), ['r2']);
-  const ajustes = await guardarRacionesFamilia(c, 5, 'Ana');
+  const ajustes = await guardarAjustesFamilia(c, { racionesFamilia: 5 }, 'Ana');
   assert.equal(ajustes.racionesFamilia, 5);
-  await assert.rejects(guardarRacionesFamilia(c, 0, 'Ana'), /van de 1 a 50/);
+  await assert.rejects(guardarAjustesFamilia(c, { racionesFamilia: 0 }, 'Ana'), /van de 1 a 50/);
+  const conCategorias = await guardarAjustesFamilia(c, { categoriasFueraDelMenu: ['Postres'] }, 'Ana');
+  assert.deepEqual(conCategorias, { version: 1, racionesFamilia: 5, categoriasFueraDelMenu: ['Postres'] });
 });

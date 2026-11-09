@@ -95,7 +95,7 @@ Una entrada por receta planificada. Un hueco (día + comida o cena) puede tener 
 | `hueco` | `comida` o `cena` | |
 | `receta` | id de receta | Al borrar una receta se quitan sus entradas. |
 | `raciones` | entero 1–50 | Por defecto, las raciones de la familia (ver `ajustes.json`). |
-| `origen` | `manual` o `auto` | `manual`: elegida a mano; el generador de menús (PL-02) no la cambia. |
+| `origen` | `manual` o `auto` | `manual`: elegida a mano; el generador de menús no la cambia nunca. `auto`: la puso la app («Rellenar huecos» o «Que elija la app»); se puede regenerar. |
 
 ### Huecos especiales
 
@@ -117,9 +117,10 @@ Quien recorra `items` para sumar ingredientes o contar recetas debe saltarse las
 Ajustes compartidos por toda la familia (los de cada dispositivo, como el token, no salen de ese dispositivo). No es una lista.
 
 ```json
-{ "version": 1, "racionesFamilia": 4 }
+{ "version": 1, "racionesFamilia": 4, "categoriasFueraDelMenu": ["Postres"] }
 ```
 
 | Campo | Tipo | Notas |
 | --- | --- | --- |
 | `racionesFamilia` | entero 1–50 | Raciones con las que entra una receta nueva en el menú. Si falta, 4. |
+| `categoriasFueraDelMenu` | lista de textos | Categorías que no salen al rellenar el menú automáticamente. Si falta, entran todas. |

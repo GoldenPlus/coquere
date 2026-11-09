@@ -3,16 +3,17 @@
 import { guardarConfig, borrarConfig, normalizarRepo } from './config.js';
 import { crearCliente } from './github.js';
 import { crearAlmacen } from './almacen.js';
-import { limpiar } from './texto.js';
+import { limpiar, normalizar } from './texto.js';
 import { app } from './estado.js';
 import { $, el, aviso, fechaLegible, ocupado } from './dom.js';
 import { abrirNuevaReceta, abrirEditarReceta, prepararFormularioReceta } from './formulario-receta.js';
 import { borrarReceta, puntuarReceta, anadirNota } from './recetas.js';
 import { mostrarFoto } from './fotos.js';
-import { filtrosVacios, filtrosActivos, filtrarRecetas, construirPanel } from './filtros.js';
+import { filtrosVacios, filtrosActivos, filtrarRecetas, construirPanel, opcionesFiltro } from './filtros.js';
+import { categoriasFuera } from './generador.js';
 import { pintarListado } from './listado.js';
 import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './ficha.js';
-import { inicioSemana, racionesFamilia, guardarRacionesFamilia, usosDeReceta, quitarRecetaDeMenus, leerFecha, esFechaISO } from './menus.js';
+import { inicioSemana, racionesFamilia, guardarAjustesFamilia, usosDeReceta, quitarRecetaDeMenus, leerFecha, esFechaISO } from './menus.js';
 import { prepararMenu, pintarMenu, hoyISO } from './vista-menu.js';
 
 function mostrarEstado(texto, esError = false) {
@@ -163,8 +164,23 @@ function abrirAjustes() {
   $('#ajustes-olvidar').hidden = !app.cliente;
   $('#ajustes-familia').hidden = !(app.cliente && app.almacen.fecha);
   f.racionesFamilia.value = racionesFamilia(app.almacen.datos('ajustes'));
+  pintarCategoriasMenu(categoriasFuera(app.almacen.datos('ajustes')));
   $('#dlg-ajustes').showModal();
 }
+
+/** Fichas de categorías: activas las que entran en el menú automático. */
+function pintarCategoriasMenu(fuera) {
+  const { categorias } = opcionesFiltro(app.almacen.items('recetas'));
+  const estaFuera = (c) => fuera.some((x) => normalizar(x) === normalizar(c));
+  $('#ajustes-categorias-menu').hidden = !categorias.length;
+  $('#ajustes-categorias').replaceChildren(...categorias.map((c) =>
+    el('button', {
+      type: 'button', class: `ficha-filtro${estaFuera(c) ? '' : ' activa'}`, 'aria-pressed': String(!estaFuera(c)), 'data-categoria': c,
+      onclick: () => pintarCategoriasMenu(estaFuera(c) ? fuera.filter((x) => normalizar(x) !== normalizar(c)) : [...fuera, c]),
+    }, c)));
+}
+
+const leerCategoriasFuera = () => [...$('#ajustes-categorias').querySelectorAll('[aria-pressed="false"]')].map((b) => b.dataset.categoria);
 
 async function guardarAjustes(evento) {
   evento.preventDefault();
@@ -180,10 +196,17 @@ async function guardarAjustes(evento) {
   try {
     const cliente = crearCliente(nueva);
     await app.almacen.recargar(cliente);
-    // Raciones de la familia: compartidas en ajustes.json, solo si se han cambiado.
-    const raciones = Number(f.racionesFamilia.value);
-    if (!$('#ajustes-familia').hidden && raciones !== racionesFamilia(app.almacen.datos('ajustes'))) {
-      app.almacen.fijar('ajustes', await guardarRacionesFamilia(cliente, raciones, nueva.nombre));
+    // Ajustes de la familia: compartidos en ajustes.json, solo los que se han cambiado.
+    if (!$('#ajustes-familia').hidden) {
+      const actuales = app.almacen.datos('ajustes');
+      const cambios = {};
+      const raciones = Number(f.racionesFamilia.value);
+      if (raciones !== racionesFamilia(actuales)) cambios.racionesFamilia = raciones;
+      // Las categorías que ya no existen se conservan: si vuelve a haber recetas suyas, siguen fuera.
+      const visibles = new Set(opcionesFiltro(app.almacen.items('recetas')).categorias.map(normalizar));
+      const fuera = [...categoriasFuera(actuales).filter((c) => !visibles.has(normalizar(c))), ...leerCategoriasFuera()];
+      if (JSON.stringify([...fuera].sort()) !== JSON.stringify([...categoriasFuera(actuales)].sort())) cambios.categoriasFueraDelMenu = fuera;
+      if (Object.keys(cambios).length) app.almacen.fijar('ajustes', await guardarAjustesFamilia(cliente, cambios, nueva.nombre));
     }
     guardarConfig(nueva);
     app.config = nueva;

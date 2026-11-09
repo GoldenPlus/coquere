@@ -2,6 +2,7 @@
 
 import { HUECOS, RACIONES_MAX, fechaISO, sumarDias, inicioSemana, diasDeSemana, leerFecha, entradasDe, especialDe, esEspecial, ESPECIALES, racionesFamilia, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones, marcarEspecial, quitarEspecial } from './menus.js';
 import { filtrarRecetas, filtrosVacios } from './filtros.js';
+import { elegirReceta, rellenarYGuardar } from './generador.js';
 import { compararTitulos } from './texto.js';
 import { $, el, aviso, ocupado } from './dom.js';
 
@@ -95,7 +96,8 @@ function plato(entrada, recetas, posicion, total) {
   return el(
     'div',
     { class: 'plato' },
-    el('a', { class: 'hueco-receta', href: `#receta/${encodeURIComponent(receta.id)}` }, receta.titulo),
+    el('a', { class: 'hueco-receta', href: `#receta/${encodeURIComponent(receta.id)}` }, receta.titulo,
+      entrada.origen === 'auto' && el('span', { class: 'marca-auto', title: 'Puesta por la app', 'aria-label': '(puesta por la app)' }, '✨')),
     el(
       'div',
       { class: 'hueco-acciones' },
@@ -201,7 +203,7 @@ function abrirElegir(fecha, h, sustituye = null, modo = null) {
   $('#elegir-especial-ayuda').textContent = modo === 'especial' ? 'Elige el tipo y, si quieres, una nota. Para poner recetas, vacía el hueco con ✕.' : 'O deja el hueco sin receta:';
   $('#elegir-nota').value = actual?.nota ?? '';
   for (const b of $('#elegir-especial').querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.especial === actual?.especial));
-  $('#elegir-buscar').hidden = $('#elegir-lista').hidden = modo === 'especial';
+  $('#elegir-buscar').hidden = $('#elegir-lista').hidden = $('#elegir-azar').hidden = modo === 'especial';
   $('#elegir-buscar').value = '';
   pintarOpciones();
   $('#dlg-elegir').showModal();
@@ -216,14 +218,68 @@ async function elegirEspecial(boton) {
   $('#dlg-elegir').close();
 }
 
-async function elegir(receta, boton) {
+/** «Que elija la app»: una receta con las reglas del generador, distinta de las que ya hay en el hueco. */
+async function elegirAlAzar(boton) {
+  const { fecha, hueco: h } = eligiendo;
+  const menus = app.almacen.items('menus');
+  const receta = elegirReceta({
+    recetas: app.almacen.items('recetas'), menus, ajustes: app.almacen.datos('ajustes'), fecha, hueco: h,
+    excluir: entradasDe(menus, fecha, h).map((e) => e.receta),
+  });
+  if (!receta) return aviso('No hay otra receta que encaje en este hueco (revisa las etiquetas «comida»/«cena» y las categorías en Ajustes).');
+  await elegir(receta, boton, 'auto');
+}
+
+async function elegir(receta, boton, origen = 'manual') {
   const { fecha, hueco: h, sustituye } = eligiendo;
   const anterior = sustituye && entradasDe(app.almacen.items('menus'), fecha, h).find((e) => e.receta === sustituye);
   // Al cambiar de receta se mantienen las raciones elegidas; en un plato nuevo, las de la familia.
   const raciones = anterior?.raciones ?? racionesFamilia(app.almacen.datos('ajustes'));
-  for (const b of $('#elegir-lista').querySelectorAll('button')) b.disabled = true;
-  await guardar(boton, () => ponerReceta(app.cliente, { fecha, hueco: h, receta, raciones, sustituye }, app.config.nombre), `${receta.titulo}: ${NOMBRE_HUECO[h].toLowerCase()} del ${nombreDia(fecha)}`);
+  for (const b of $('#dlg-elegir').querySelectorAll('button')) b.disabled = true;
+  await guardar(boton, () => ponerReceta(app.cliente, { fecha, hueco: h, receta, raciones, sustituye, origen }, app.config.nombre), `${receta.titulo}: ${NOMBRE_HUECO[h].toLowerCase()} del ${nombreDia(fecha)}`);
+  for (const b of $('#dlg-elegir').querySelectorAll('button')) b.disabled = false;
   $('#dlg-elegir').close();
+}
+
+// ---------- Rellenar automáticamente
+
+function abrirRellenar() {
+  const f = $('#form-rellenar');
+  const hoy = hoyISO();
+  const domingo = sumarDias(lunesActual, 6);
+  f.desde.value = hoy > lunesActual && hoy <= domingo ? hoy : lunesActual;
+  f.hasta.value = domingo;
+  f.reemplazar.checked = false;
+  $('#rellenar-error').textContent = '';
+  $('#dlg-rellenar').showModal();
+}
+
+async function rellenar(evento) {
+  evento.preventDefault();
+  const f = evento.target;
+  const desde = f.desde.value;
+  const hasta = f.hasta.value;
+  const error = $('#rellenar-error');
+  if (!desde || !hasta || hasta < desde) return void (error.textContent = 'Elige un rango de fechas: «hasta» no puede ser antes que «desde».');
+  if (sumarDias(desde, 62) < hasta) return void (error.textContent = 'Como mucho, dos meses de una vez.');
+  if (!app.almacen.items('recetas').length) return void (error.textContent = 'Aún no hay recetas: crea alguna primero.');
+  error.textContent = '';
+  let resultado = null;
+  await guardar($('#rellenar-ok'), async () => {
+    resultado = await rellenarYGuardar(app.cliente, {
+      recetas: app.almacen.items('recetas'), ajustes: app.almacen.datos('ajustes'), desde, hasta, reemplazarAuto: f.reemplazar.checked,
+    }, app.config.nombre);
+    return resultado.datos;
+  });
+  if (!resultado) return; // Error: ya se ha avisado.
+  $('#dlg-rellenar').close();
+  const { puestas, sinReceta } = resultado;
+  const partes = [];
+  if (puestas) partes.push(puestas === 1 ? 'Puesta 1 receta.' : `Puestas ${puestas} recetas.`);
+  else if (!sinReceta) partes.push('No había huecos que rellenar en esas fechas.');
+  if (sinReceta) partes.push(`${sinReceta === 1 ? '1 hueco se queda' : `${sinReceta} huecos se quedan`} sin receta: no hay ninguna que encaje (revisa las etiquetas «comida»/«cena» y las categorías en Ajustes).`);
+  aviso(partes.join(' '));
+  if (lunesActual !== inicioSemana(desde) && desde > sumarDias(lunesActual, 6)) location.replace(`#menu/${inicioSemana(desde)}`);
 }
 
 /** Conecta la vista una vez. `onCambio()` se llama tras cada guardado para repintar. */
@@ -231,6 +287,10 @@ export function prepararMenu(estadoApp, onCambio) {
   app = estadoApp;
   alCambiar = onCambio;
   $('#elegir-buscar').addEventListener('input', pintarOpciones);
+  $('#elegir-azar').addEventListener('click', (e) => elegirAlAzar(e.currentTarget));
+  $('#semana-rellenar').addEventListener('click', abrirRellenar);
+  $('#form-rellenar').addEventListener('submit', rellenar);
+  $('#rellenar-cancelar').addEventListener('click', () => $('#dlg-rellenar').close());
   for (const b of $('#elegir-especial').querySelectorAll('button')) b.addEventListener('click', () => elegirEspecial(b));
   $('#elegir-cancelar').addEventListener('click', () => $('#dlg-elegir').close());
   $('#semana-anterior').addEventListener('click', () => location.replace(`#menu/${sumarDias(lunesActual, -7)}`));

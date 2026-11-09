@@ -8,8 +8,8 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-lIHSVzVzHtjIPqHfbwORnNl31CluskAqNr7Rttcctuk='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=a59c4115aa">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-hYwauiOQ051bJS4JDnVmLqiMdAJQ7fdmTOoxc6uixAE='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=5c64da1c09">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=0854bcde84",
@@ -21,18 +21,19 @@
       "./js/filtros.js": "./js/filtros.js?v=42e5d71964",
       "./js/formulario-receta.js": "./js/formulario-receta.js?v=b9fd67d1ac",
       "./js/fotos.js": "./js/fotos.js?v=a3917a6171",
+      "./js/generador.js": "./js/generador.js?v=550acf399d",
       "./js/github.js": "./js/github.js?v=fd3d2078e2",
       "./js/ingredientes.js": "./js/ingredientes.js?v=b734b56623",
       "./js/listado.js": "./js/listado.js?v=f991ec5e74",
-      "./js/main.js": "./js/main.js?v=dcebd183c6",
-      "./js/menus.js": "./js/menus.js?v=4148104d26",
+      "./js/main.js": "./js/main.js?v=77716984f0",
+      "./js/menus.js": "./js/menus.js?v=69235cdc4b",
       "./js/receta.js": "./js/receta.js?v=3304721f62",
       "./js/recetas.js": "./js/recetas.js?v=89fc9e0555",
       "./js/texto.js": "./js/texto.js?v=847e5e4645",
-      "./js/vista-menu.js": "./js/vista-menu.js?v=9256e90917"
+      "./js/vista-menu.js": "./js/vista-menu.js?v=e63197a9b5"
   } }
   </script>
-  <script type="module" src="js/main.js?v=dcebd183c6"></script>
+  <script type="module" src="js/main.js?v=77716984f0"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -65,6 +66,9 @@
         <h2 id="semana-nombre"></h2>
         <button id="semana-siguiente" class="icono" type="button" title="Semana siguiente" aria-label="Semana siguiente">›</button>
         <button id="semana-hoy" class="secundario" type="button">Hoy</button>
+      </div>
+      <div class="acciones-semana">
+        <button id="semana-rellenar" class="secundario" type="button">✨ Rellenar huecos</button>
       </div>
       <div id="semana" class="semana"></div>
     </section>
@@ -164,12 +168,33 @@
         </div>
         <input id="elegir-nota" type="text" maxlength="200" placeholder="Nota opcional, p. ej. «en casa de la abuela»" aria-label="Nota del hueco" autocomplete="off">
       </div>
+      <button id="elegir-azar" type="button" class="secundario azar">🎲 Que elija la app</button>
       <input id="elegir-buscar" type="search" placeholder="Buscar por título o ingrediente" aria-label="Buscar receta" autocomplete="off">
       <ul id="elegir-lista" class="opciones-receta"></ul>
       <div class="botones pie">
         <button id="elegir-cancelar" type="button" class="secundario">Cancelar</button>
       </div>
     </div>
+  </dialog>
+
+  <!-- Rellenar el menú automáticamente -->
+  <dialog id="dlg-rellenar">
+    <form id="form-rellenar" class="formulario" novalidate>
+      <h2>Rellenar el menú</h2>
+      <p class="ayuda">Pone una receta en cada comida y cena vacía. Lo que elegiste a mano y los huecos «Comemos fuera» o «Libre» no se tocan.</p>
+      <div class="dos">
+        <label>Desde <input name="desde" type="date" required></label>
+        <label>Hasta <input name="hasta" type="date" required></label>
+      </div>
+      <label class="casilla"><input name="reemplazar" type="checkbox"> Cambiar también las recetas que puso la app (✨)</label>
+      <p class="ayuda">Salen recetas con la etiqueta «comida» o «cena» según el hueco (las que no llevan ninguna de las dos valen para ambos), de las categorías elegidas en Ajustes, sin repetir en una semana y con preferencia por las mejor puntuadas.</p>
+      <p id="rellenar-error" class="error" role="alert"></p>
+      <div class="botones">
+        <span class="hueco"></span>
+        <button id="rellenar-cancelar" type="button" class="secundario">Cancelar</button>
+        <button id="rellenar-ok" type="submit">Rellenar</button>
+      </div>
+    </form>
   </dialog>
 
   <!-- Ajustes -->
@@ -197,6 +222,11 @@
         <label>Raciones por defecto en el menú
           <input name="racionesFamilia" type="number" min="1" max="50" step="1" inputmode="numeric">
         </label>
+        <div id="ajustes-categorias-menu" class="campo-categorias-menu">
+          <span>Categorías que entran al rellenar el menú</span>
+          <p class="ayuda">Toca una para sacarla (por ejemplo, los postres).</p>
+          <div id="ajustes-categorias" class="fichas" role="group" aria-label="Categorías en el menú"></div>
+        </div>
       </fieldset>
       <p id="ajustes-error" class="error" role="alert"></p>
       <div class="botones">

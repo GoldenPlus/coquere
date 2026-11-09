@@ -161,8 +161,8 @@ export function sinReceta(datos, idReceta) {
 const nombreHueco = (fecha, hueco) => `${hueco} del ${fecha}`;
 
 /** Añade una receta a un hueco, o la pone en lugar de `sustituye` (id de otra receta del hueco). */
-export async function ponerReceta(cliente, { fecha, hueco, receta, raciones, sustituye = null }, autor) {
-  const entrada = { fecha, hueco, receta: receta.id, raciones, origen: 'manual' };
+export async function ponerReceta(cliente, { fecha, hueco, receta, raciones, sustituye = null, origen = 'manual' }, autor) {
+  const entrada = { fecha, hueco, receta: receta.id, raciones, origen };
   const accion = sustituye ? `${receta.titulo} en lugar de otra receta en la` : `${receta.titulo} para la`;
   const { datos } = await cliente.actualizar(FICHERO_MENUS, (d) => conEntrada(d, entrada, { sustituye }), `Menú: ${accion} ${nombreHueco(fecha, hueco)} (por ${autor})`);
   return datos;
@@ -203,12 +203,21 @@ export async function quitarRecetaDeMenus(cliente, receta, autor) {
   return datos;
 }
 
-export async function guardarRacionesFamilia(cliente, raciones, autor) {
-  if (!Number.isInteger(raciones) || raciones < 1 || raciones > RACIONES_MAX) throw new Error(`Las raciones de la familia van de 1 a ${RACIONES_MAX}.`);
+/** Guarda en ajustes.json los ajustes de la familia que hayan cambiado (los demás campos no se tocan). */
+export async function guardarAjustesFamilia(cliente, cambios, autor) {
+  if ('racionesFamilia' in cambios) {
+    const n = cambios.racionesFamilia;
+    if (!Number.isInteger(n) || n < 1 || n > RACIONES_MAX) throw new Error(`Las raciones de la familia van de 1 a ${RACIONES_MAX}.`);
+  }
   const { datos } = await cliente.actualizar(
     FICHERO_AJUSTES,
-    (d) => (d.racionesFamilia === raciones ? null : { ...d, version: d.version ?? 1, racionesFamilia: raciones }),
-    `Ajustes: ${raciones} raciones para la familia (por ${autor})`,
+    (d) => {
+      // Un ajustes.json que aún no existe se lee como lista vacía: «items» no pinta nada aquí.
+      const { items, ...actuales } = d;
+      const nuevos = { ...actuales, version: d.version ?? 1, ...cambios };
+      return JSON.stringify(nuevos) === JSON.stringify(d) ? null : nuevos;
+    },
+    `Ajustes de la familia: ${Object.keys(cambios).join(', ')} (por ${autor})`,
     { lista: false },
   );
   return datos;

@@ -172,6 +172,9 @@ dialog.grande { width: min(44rem, calc(100vw - 2rem)); }
     padding: max(1rem, env(safe-area-inset-top)) 1rem 0;
   }
 }
+.dos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.formulario label.casilla { display: flex; align-items: center; gap: 0.6rem; font-weight: 400; font-size: 0.95rem; }
+.casilla input { width: 1.2rem; height: 1.2rem; flex: none; margin: 0; accent-color: var(--acento); }
 .tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
 fieldset { border: 1px solid var(--borde); border-radius: var(--radio); padding: 0.5rem 0.75rem 0.75rem; margin: 0; min-width: 0; }
 legend { font-weight: 600; padding: 0 0.3rem; }
@@ -289,6 +292,12 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 .barra-semana .icono { font-size: 1.7rem; line-height: 1; }
 .barra-semana .secundario { padding: 0.3em 0.9em; }
 .semana { display: grid; gap: 0.6rem; }
+.acciones-semana { display: flex; justify-content: flex-end; margin: 0 0 0.5rem; }
+.acciones-semana .secundario { padding: 0.3em 0.9em; font-size: 0.9rem; }
+.marca-auto { color: var(--suave); font-weight: 400; font-size: 0.85em; margin-left: 0.3em; }
+.azar { justify-self: start; }
+.campo-categorias-menu { display: grid; gap: 0.3rem; }
+.campo-categorias-menu .ayuda { margin: 0; }
 .dia { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 0.5rem 0.75rem 0.6rem; }
 .dia.hoy { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento); }
 .dia.pasado { opacity: 0.7; }
