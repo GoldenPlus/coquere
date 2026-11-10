@@ -8,6 +8,8 @@
   --acento-texto: #ffffff;
   --exito: #3d7a2a;
   --error: #b3261e;
+  --ok-texto: #2f5d20; --ok-fondo: #eaf3e1; --ok-borde: #b9d4a3;
+  --ambar-texto: #7a4b00; --ambar-fondo: #fdf0d5; --ambar-borde: #e9c27a;
   --radio: 12px;
   color-scheme: light dark;
 }
@@ -23,6 +25,8 @@
     --acento-texto: #171914;
     --exito: #a9c97f;
     --error: #ff8a80;
+    --ok-texto: #c3e0a2; --ok-fondo: #26331c; --ok-borde: #46613a;
+    --ambar-texto: #f3c77a; --ambar-fondo: #3a2d14; --ambar-borde: #6e5422;
   }
   .estrellas, .puntuador .estrella.llena { color: #e7b955; }
 }
@@ -374,3 +378,15 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 .hoy-raciones { font-weight: 400; color: var(--suave); font-size: 0.9rem; }
 .hoy-vacio { margin: 0; color: var(--suave); }
 .hoy-sin { color: var(--suave); }
+
+/* Marcador de equilibrio semanal */
+.equilibrio { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.marcador { font-size: 0.85rem; padding: 0.15em 0.6em; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+.marcador.sub { font-size: 0.8rem; margin-left: -0.15rem; }
+.marcador.ok { color: var(--ok-texto); background: var(--ok-fondo); border-color: var(--ok-borde); }
+.marcador.ambar { color: var(--ambar-texto); background: var(--ambar-fondo); border-color: var(--ambar-borde); }
+.campo-limites { display: grid; gap: 0.3rem; }
+.limites { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.35rem 0.75rem; }
+.limites label { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; font-size: 0.9rem; }
+.limites label.sub { color: var(--suave); }
+.limites input { width: 3.6rem; }

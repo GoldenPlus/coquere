@@ -17,6 +17,7 @@ import { inicioSemana, racionesFamilia, guardarAjustesFamilia, usosDeReceta, qui
 import { prepararMenu, pintarMenu, hoyISO } from './vista-menu.js';
 import { prepararCompra, pintarCompra } from './vista-compra.js';
 import { menuDelDia, construirHoy } from './hoy.js';
+import { GRUPOS, LIMITE_MAX, limitesProteinas } from './equilibrio.js';
 
 function mostrarEstado(texto, esError = false) {
   const nodo = $('#estado');
@@ -175,6 +176,7 @@ function abrirAjustes() {
   $('#ajustes-familia').hidden = !(app.cliente && app.almacen.fecha);
   f.racionesFamilia.value = racionesFamilia(app.almacen.datos('ajustes'));
   pintarCategoriasMenu(categoriasFuera(app.almacen.datos('ajustes')));
+  pintarLimites(limitesProteinas(app.almacen.datos('ajustes')));
   $('#dlg-ajustes').showModal();
 }
 
@@ -190,6 +192,24 @@ function pintarCategoriasMenu(fuera) {
     }, c)));
 }
 
+/** Un campo por grupo del marcador: «Carne ≤ [4]», «Pescado ≥ [3]»… */
+function pintarLimites(limites) {
+  $('#ajustes-limites').replaceChildren(...GRUPOS.map((g) => el('label', { class: g.dentroDe ? 'sub' : '' },
+    `${g.dentroDe ? `${g.dentroDe === 'carne' ? 'Carne' : 'Pescado'} ${g.nombre}` : g.nombre} ${g.tipo === 'max' ? '≤' : '≥'}`,
+    el('input', { type: 'number', min: 0, max: LIMITE_MAX, step: 1, inputmode: 'numeric', 'data-limite': g.id, value: String(limites[g.id]) }))));
+}
+
+/** Límites del formulario, o null si alguno no es válido. */
+function leerLimites() {
+  const limites = {};
+  for (const campo of $('#ajustes-limites').querySelectorAll('input')) {
+    const n = Number(campo.value);
+    if (campo.value === '' || !Number.isInteger(n) || n < 0 || n > LIMITE_MAX) return null;
+    limites[campo.dataset.limite] = n;
+  }
+  return limites;
+}
+
 const leerCategoriasFuera = () => [...$('#ajustes-categorias').querySelectorAll('[aria-pressed="false"]')].map((b) => b.dataset.categoria);
 
 async function guardarAjustes(evento) {
@@ -200,6 +220,8 @@ async function guardarAjustes(evento) {
   const nueva = { nombre: limpiar(f.nombre.value), repo, token: f.token.value.trim() };
   if (!nueva.nombre || !nueva.token) return void (error.textContent = 'Rellena tu nombre y el token.');
   if (!repo) return void (error.textContent = 'El repositorio debe tener la forma usuario/nombre.');
+  const limites = $('#ajustes-familia').hidden ? null : leerLimites();
+  if (!$('#ajustes-familia').hidden && !limites) return void (error.textContent = `Los límites del equilibrio semanal van de 0 a ${LIMITE_MAX}.`);
 
   const listo = ocupado($('#ajustes-guardar'), 'Comprobando…');
   error.textContent = '';
@@ -216,6 +238,7 @@ async function guardarAjustes(evento) {
       const visibles = new Set(opcionesFiltro(app.almacen.items('recetas')).categorias.map(normalizar));
       const fuera = [...categoriasFuera(actuales).filter((c) => !visibles.has(normalizar(c))), ...leerCategoriasFuera()];
       if (JSON.stringify([...fuera].sort()) !== JSON.stringify([...categoriasFuera(actuales)].sort())) cambios.categoriasFueraDelMenu = fuera;
+      if (JSON.stringify(limites) !== JSON.stringify(limitesProteinas(actuales))) cambios.limitesProteinas = limites;
       if (Object.keys(cambios).length) app.almacen.fijar('ajustes', await guardarAjustesFamilia(cliente, cambios, nueva.nombre));
     }
     guardarConfig(nueva);

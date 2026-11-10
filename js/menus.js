@@ -209,6 +209,10 @@ export async function guardarAjustesFamilia(cliente, cambios, autor) {
     const n = cambios.racionesFamilia;
     if (!Number.isInteger(n) || n < 1 || n > RACIONES_MAX) throw new Error(`Las raciones de la familia van de 1 a ${RACIONES_MAX}.`);
   }
+  if ('limitesProteinas' in cambios) {
+    const malos = Object.values(cambios.limitesProteinas).some((n) => !Number.isInteger(n) || n < 0 || n > 14);
+    if (malos) throw new Error('Los límites del equilibrio semanal van de 0 a 14.');
+  }
   const { datos } = await cliente.actualizar(
     FICHERO_AJUSTES,
     (d) => {

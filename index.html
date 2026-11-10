@@ -8,14 +8,15 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-c9JrRehS6Ko2GM8MBGkdfG/HCsi5gHXD/3z3OtTcqmk='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=0fc613009d">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-JxKQXvBymHSuddGqxmhV+tJ4DY3uQjyTUMqW1fJxok0='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=d4bdd61c1c">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=2c2105c5d6",
       "./js/compra.js": "./js/compra.js?v=deb96db98c",
       "./js/config.js": "./js/config.js?v=640e00eb72",
       "./js/dom.js": "./js/dom.js?v=749c587cc2",
+      "./js/equilibrio.js": "./js/equilibrio.js?v=6fd866f00c",
       "./js/escalado.js": "./js/escalado.js?v=2ed029e492",
       "./js/estado.js": "./js/estado.js?v=941b583a8f",
       "./js/ficha.js": "./js/ficha.js?v=dccf38778b",
@@ -27,16 +28,16 @@
       "./js/hoy.js": "./js/hoy.js?v=ab90308406",
       "./js/ingredientes.js": "./js/ingredientes.js?v=b734b56623",
       "./js/listado.js": "./js/listado.js?v=f991ec5e74",
-      "./js/main.js": "./js/main.js?v=6051a85b05",
-      "./js/menus.js": "./js/menus.js?v=69235cdc4b",
+      "./js/main.js": "./js/main.js?v=55c4f75aeb",
+      "./js/menus.js": "./js/menus.js?v=f506286cb2",
       "./js/receta.js": "./js/receta.js?v=3304721f62",
       "./js/recetas.js": "./js/recetas.js?v=89fc9e0555",
       "./js/texto.js": "./js/texto.js?v=847e5e4645",
       "./js/vista-compra.js": "./js/vista-compra.js?v=8e3971cbf3",
-      "./js/vista-menu.js": "./js/vista-menu.js?v=93224973ed"
+      "./js/vista-menu.js": "./js/vista-menu.js?v=a6a21acce5"
   } }
   </script>
-  <script type="module" src="js/main.js?v=6051a85b05"></script>
+  <script type="module" src="js/main.js?v=55c4f75aeb"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -75,6 +76,7 @@
       <div class="acciones-semana">
         <button id="semana-rellenar" class="secundario" type="button">✨ Rellenar huecos</button>
       </div>
+      <ul id="equilibrio" class="equilibrio" aria-label="Equilibrio de la semana: raciones de cada proteína frente a lo recomendado"></ul>
       <div id="semana" class="semana"></div>
     </section>
     <section id="vista-compra" hidden>
@@ -265,6 +267,11 @@
           <span>Categorías que entran al rellenar el menú</span>
           <p class="ayuda">Toca una para sacarla (por ejemplo, los postres).</p>
           <div id="ajustes-categorias" class="fichas" role="group" aria-label="Categorías en el menú"></div>
+        </div>
+        <div class="campo-limites">
+          <span>Equilibrio semanal (comidas y cenas)</span>
+          <p class="ayuda">Lo recomendado por la Guía Fácil de Nestlé. El marcador del menú se pone en ámbar si sobra o falta.</p>
+          <div id="ajustes-limites" class="limites"></div>
         </div>
       </fieldset>
       <p id="ajustes-error" class="error" role="alert"></p>

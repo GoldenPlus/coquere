@@ -6,6 +6,7 @@ import { elegirReceta, rellenarYGuardar } from './generador.js';
 import { compararTitulos } from './texto.js';
 import { $, el, aviso, ocupado } from './dom.js';
 import { enlaceReceta } from './hoy.js';
+import { equilibrioSemana, textoMarcador } from './equilibrio.js';
 
 let app = null;
 let alCambiar = () => {};
@@ -160,6 +161,7 @@ export function pintarMenu(lunes) {
   const recetas = new Map(app.almacen.items('recetas').map((r) => [r.id, r]));
   $('#semana-nombre').textContent = nombreSemana(lunes);
   $('#semana-hoy').hidden = lunes === inicioSemana(hoy);
+  pintarEquilibrio(lunes, [...recetas.values()]);
   $('#semana').replaceChildren(
     ...diasDeSemana(lunes).map((fecha) =>
       el(
@@ -170,6 +172,17 @@ export function pintarMenu(lunes) {
       ),
     ),
   );
+}
+
+/** Marcador de proteínas de la semana: verde si cumple, ámbar si falta o sobra. */
+function pintarEquilibrio(lunes, recetas) {
+  const marcador = equilibrioSemana(app.almacen.items('menus'), recetas, diasDeSemana(lunes), app.almacen.datos('ajustes'));
+  $('#equilibrio').replaceChildren(...marcador.map((m) => {
+    const estado = m.cumple ? 'cumple' : m.tipo === 'max' ? 'sobra' : 'falta';
+    const explicacion = `${m.dentroDe ? `${m.dentroDe === 'carne' ? 'Carne' : 'Pescado'} ${m.nombre}` : m.nombre}: ${m.cuenta} ${m.cuenta === 1 ? 'vez' : 'veces'} esta semana; recomendado ${m.tipo === 'max' ? 'como mucho' : 'al menos'} ${m.limite}${m.cumple ? '' : ` (${estado})`}.`;
+    return el('li', { class: `marcador ${m.cumple ? 'ok' : 'ambar'}${m.dentroDe ? ' sub' : ''}`, title: explicacion, 'aria-label': explicacion },
+      `${m.nombre} `, el('strong', {}, textoMarcador(m)));
+  }));
 }
 
 // ---------- Elegir receta para un hueco

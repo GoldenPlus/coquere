@@ -151,3 +151,4 @@ Ajustes compartidos por toda la familia (los de cada dispositivo, como el token,
 | --- | --- | --- |
 | `racionesFamilia` | entero 1–50 | Raciones con las que entra una receta nueva en el menú. Si falta, 4. |
 | `categoriasFueraDelMenu` | lista de textos | Categorías que no salen al rellenar el menú automáticamente. Si falta, entran todas. |
+| `limitesProteinas` | objeto de enteros 0–14 | Límites del marcador de equilibrio semanal: `carne` (máx., 4), `carneRoja` (máx., 1), `pescado` (mín., 3; incluye marisco), `pescadoAzul` (mín., 1), `legumbre` (mín., 3), `huevo` (máx., 3). Los que falten, los recomendados. |

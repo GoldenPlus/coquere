@@ -19,6 +19,7 @@ npm run versionar  # tras cambiar CSS o JS: actualiza marcas de versión y CSP e
 | `js/filtros.js` | Búsqueda y filtros del listado |
 | `js/menus.js`, `js/vista-menu.js` | Menú semanal (`menus.json`) y ajustes de la familia (`ajustes.json`) |
 | `js/generador.js` | Reglas para rellenar el menú y «que elija la app» |
+| `js/equilibrio.js` | Marcador de equilibrio semanal de proteínas |
 | `js/hoy.js` | Tarjeta «Hoy» encima del listado (comida y cena del día) |
 | `js/compra.js`, `js/vista-compra.js` | Lista de la compra (`lista.json`) a partir del menú |
 | `js/ingredientes.js` | Mismo ingrediente escrito de otra forma (`claveIngrediente`) y sugerencias de nombres |
