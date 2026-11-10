@@ -13,10 +13,10 @@ import { filtrosVacios, filtrosActivos, filtrarRecetas, construirPanel, opciones
 import { categoriasFuera } from './generador.js';
 import { pintarListado } from './listado.js';
 import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './ficha.js';
-import { inicioSemana, racionesFamilia, guardarAjustesFamilia, usosDeReceta, quitarRecetaDeMenus, leerFecha, esFechaISO } from './menus.js';
+import { entradasDe, inicioSemana, racionesFamilia, guardarAjustesFamilia, usosDeReceta, quitarRecetaDeMenus, leerFecha, esFechaISO } from './menus.js';
 import { prepararMenu, pintarMenu, hoyISO } from './vista-menu.js';
 import { prepararCompra, pintarCompra } from './vista-compra.js';
-import { menuDelDia, construirHoy } from './hoy.js';
+import { menuDelDia, construirHoy, cocinarDoble, textoCocinarDoble } from './hoy.js';
 import { prepararTengo, pintarTengo } from './vista-tengo.js';
 import { GRUPOS, LIMITE_MAX, limitesProteinas } from './equilibrio.js';
 
@@ -31,8 +31,8 @@ function mostrarEstado(texto, esError = false) {
  * y cualquier otra cosa, el listado de recetas.
  */
 function vistaEnDireccion() {
-  const ficha = location.hash.match(/^#receta\/([^/]+)(?:\/(\d{1,2}))?$/);
-  if (ficha) return { tipo: 'receta', id: decodeURIComponent(ficha[1]), raciones: ficha[2] ? Number(ficha[2]) : null };
+  const ficha = location.hash.match(/^#receta\/([^/]+)(?:\/(\d{4}-\d{2}-\d{2})\/(comida|cena))?$/);
+  if (ficha) return { tipo: 'receta', id: decodeURIComponent(ficha[1]), fecha: ficha[2] ?? null, hueco: ficha[3] ?? null };
   const menu = location.hash.match(/^#menu(?:\/(\d{4}-\d{2}-\d{2}))?$/);
   if (menu) return { tipo: 'menu', lunes: inicioSemana(menu[1] && esFechaISO(menu[1]) ? menu[1] : hoyISO()) };
   if (location.hash === '#compra') return { tipo: 'compra' };
@@ -71,7 +71,7 @@ function render() {
   pantallaEncendida(enFicha);
   if (!hayDatos) return;
   const recetas = app.almacen.items('recetas');
-  if (enFicha) return pintarFicha(recetas.find((r) => r.id === vista.id), vista.raciones);
+  if (enFicha) return pintarFicha(recetas.find((r) => r.id === vista.id), vista);
   if (enMenu) return pintarMenu(vista.lunes);
   if (enCompra) return pintarCompra();
   if (enTengo) return pintarTengo();
@@ -117,16 +117,29 @@ let fichaPintada = null;
 /** Receta mostrada en la ficha (para Editar y Borrar). */
 let fichaActual = null;
 
-function pintarFicha(receta, raciones = null) {
+/** Raciones y aviso de la ficha abierta desde un hueco del menú: las del hueco o, si se cocina para más días, la suma. */
+function desdeElMenu(receta, { fecha, hueco }) {
+  if (!receta || !fecha) return { raciones: null, avisoMenu: null };
+  const menus = app.almacen.items('menus');
+  const entrada = entradasDe(menus, fecha, hueco).find((e) => e.receta === receta.id);
+  if (!entrada) return { raciones: null, avisoMenu: null };
+  const doble = cocinarDoble(menus, fecha, hueco, receta.id);
+  return doble
+    ? { raciones: doble.raciones, avisoMenu: `🍲 ${textoCocinarDoble(doble, fecha)} (${doble.propias} para esta ${hueco} y ${doble.raciones - doble.propias} para después). Las cantidades ya están sumadas.` }
+    : { raciones: entrada.raciones, avisoMenu: null };
+}
+
+function pintarFicha(receta, vista = {}) {
+  const { raciones, avisoMenu } = desdeElMenu(receta, vista);
   fichaActual = receta ?? null;
   $('#ficha-editar').hidden = !receta;
   $('#ficha-borrar').hidden = !receta;
   // Si se actualiza desde GitHub y la receta no ha cambiado, no se redibuja: se conservan los pasos tachados.
-  const clave = receta ? JSON.stringify([receta, raciones]) : 'ninguna';
+  const clave = receta ? JSON.stringify([receta, raciones, avisoMenu]) : 'ninguna';
   if (clave === fichaPintada && !$('#vista-ficha').hidden) return;
   fichaPintada = clave;
   $('#ficha').replaceChildren(
-    receta ? construirFicha(receta, { onPuntuar: puntuar, onNota: guardarNota, verFoto, raciones }) : el('p', { class: 'vacio' }, 'No se encuentra esta receta. Puede que la hayan borrado desde otro dispositivo.'),
+    receta ? construirFicha(receta, { onPuntuar: puntuar, onNota: guardarNota, verFoto, raciones, avisoMenu }) : el('p', { class: 'vacio' }, 'No se encuentra esta receta. Puede que la hayan borrado desde otro dispositivo.'),
   );
   $('#ficha-pantalla').hidden = !(receta && puedeMantenerPantalla());
 }

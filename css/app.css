@@ -407,3 +407,8 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 /* Rellenar el menú: cómo elige */
 .como-elige summary { cursor: pointer; color: var(--acento); font-size: 0.9rem; }
 .como-elige ul { margin: 0.4rem 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; }
+
+/* Cocinar el doble */
+.hoy-plato { display: grid; gap: 0.1rem; }
+.cocinar-doble { font-size: 0.9rem; color: var(--ambar-texto); }
+.cocinar-doble.destacado { margin: 0 0 0.5rem; padding: 0.4rem 0.6rem; background: var(--ambar-fondo); border: 1px solid var(--ambar-borde); border-radius: var(--radio); }

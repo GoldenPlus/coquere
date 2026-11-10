@@ -26,6 +26,29 @@ test('menú del día: las recetas borradas no salen', () => {
 });
 
 test('enlace a la ficha con raciones', () => {
-  assert.equal(enlaceReceta('a b', 6), '#receta/a%20b/6');
+  assert.equal(enlaceReceta('a b', '2026-11-10', 'cena'), '#receta/a%20b/2026-11-10/cena');
   assert.equal(enlaceReceta('a'), '#receta/a');
+});
+
+test('cocinar el doble: el primer día suma las raciones de los siguientes 3 días', async () => {
+  const { cocinarDoble, textoCocinarDoble } = await import('../js/hoy.js');
+  const E = (fecha, hueco, receta, raciones = 4) => ({ fecha, hueco, receta, raciones });
+  // 2026-11-10 es martes.
+  const menus = [E('2026-11-10', 'comida', 'a'), E('2026-11-12', 'comida', 'a'), E('2026-11-20', 'cena', 'a'), E('2026-11-11', 'cena', 'b', 2), E('2026-11-11', 'comida', 'b', 3)];
+  const doble = cocinarDoble(menus, '2026-11-10', 'comida', 'a');
+  assert.deepEqual(doble, { raciones: 8, propias: 4, otras: [{ fecha: '2026-11-12', hueco: 'comida', raciones: 4 }] });
+  assert.equal(textoCocinarDoble(doble, '2026-11-10'), 'También para el jueves: cocina 8 raciones');
+  // El segundo día no avisa; lo de dentro de 10 días tampoco cuenta.
+  assert.equal(cocinarDoble(menus, '2026-11-12', 'comida', 'a'), null);
+  assert.equal(cocinarDoble(menus, '2026-11-20', 'cena', 'a'), null);
+  // Comida y cena del mismo día.
+  const mismoDia = cocinarDoble(menus, '2026-11-11', 'comida', 'b');
+  assert.equal(mismoDia.raciones, 5);
+  assert.equal(textoCocinarDoble(mismoDia, '2026-11-11'), 'También para la cena: cocina 5 raciones');
+  assert.equal(cocinarDoble(menus, '2026-11-10', 'cena', 'a'), null);
+});
+
+test('menú del día lleva el aviso de cocinar el doble', () => {
+  const menus = [{ fecha: '2026-11-10', hueco: 'cena', receta: 'a', raciones: 4 }, { fecha: '2026-11-11', hueco: 'cena', receta: 'a', raciones: 2 }];
+  assert.equal(menuDelDia(menus, recetas, '2026-11-10')[1].platos[0].doble.raciones, 6);
 });

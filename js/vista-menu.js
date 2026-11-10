@@ -98,7 +98,7 @@ function plato(entrada, recetas, posicion, total) {
   return el(
     'div',
     { class: 'plato' },
-    el('a', { class: 'hueco-receta', href: enlaceReceta(receta.id, raciones) }, receta.titulo,
+    el('a', { class: 'hueco-receta', href: enlaceReceta(receta.id, fecha, h) }, receta.titulo,
       entrada.origen === 'auto' && el('span', { class: 'marca-auto', title: 'Puesta por la app', 'aria-label': '(puesta por la app)' }, '✨')),
     el(
       'div',

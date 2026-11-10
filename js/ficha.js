@@ -91,7 +91,7 @@ function seccionNotas(r, onNota) {
  * `onPuntuar(n, grupo)` y `onNota(textarea, boton)` guardan; sin ellos la ficha es de solo lectura.
  * `verFoto(img, ruta)` carga la foto del repo privado.
  */
-export function construirFicha(r, { onPuntuar, onNota, verFoto, raciones: inicial = null } = {}) {
+export function construirFicha(r, { onPuntuar, onNota, verFoto, raciones: inicial = null, avisoMenu = null } = {}) {
   let foto = null;
   if (r.foto && verFoto) {
     foto = el('img', { class: 'ficha-foto', alt: `Foto: ${r.titulo}` });
@@ -122,7 +122,7 @@ export function construirFicha(r, { onPuntuar, onNota, verFoto, raciones: inicia
       : r.puntuacion && el('p', { class: 'estrellas grande', 'aria-label': `Puntuación: ${r.puntuacion} de 5` }, estrellas(r.puntuacion)),
     chips.length > 0 && el('ul', { class: 'chips' }, chips.map(([tipo, t]) => el('li', { class: tipo }, t))),
     el('dl', { class: 'ficha-datos' }, raciones, datos.map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v)))),
-    seccion('Ingredientes', aviso, ingredientes),
+    seccion('Ingredientes', avisoMenu && el('p', { class: 'cocinar-doble destacado' }, avisoMenu), aviso, ingredientes),
     seccion(
       'Pasos',
       r.pasos.length
