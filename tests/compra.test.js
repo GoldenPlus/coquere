@@ -75,3 +75,14 @@ test('generar y añadir guardan en lista.json', async () => {
   assert.equal(datos.items.at(-1).nombre, 'papel de cocina');
   assert.deepEqual(mensajes, ['Compra: lista del 2026-11-09 al 2026-11-15 (por Ana)', 'Compra: añade papel de cocina (por Ana)']);
 });
+
+test('periodos: desde hoy hasta el domingo, el domingo siguiente o fin de mes', async () => {
+  const { rangoPeriodo } = await import('../js/compra.js');
+  // 2026-11-10 es martes.
+  assert.deepEqual(rangoPeriodo('2026-11-10', 'semana'), { desde: '2026-11-10', hasta: '2026-11-15' });
+  assert.deepEqual(rangoPeriodo('2026-11-10', '2semanas'), { desde: '2026-11-10', hasta: '2026-11-22' });
+  assert.deepEqual(rangoPeriodo('2026-11-10', 'mes'), { desde: '2026-11-10', hasta: '2026-11-30' });
+  assert.deepEqual(rangoPeriodo('2026-11-15', 'semana'), { desde: '2026-11-15', hasta: '2026-11-15' });
+  assert.deepEqual(rangoPeriodo('2026-02-03', 'mes'), { desde: '2026-02-03', hasta: '2026-02-28' });
+  assert.deepEqual(rangoPeriodo('2026-12-29', '2semanas'), { desde: '2026-12-29', hasta: '2027-01-10' });
+});

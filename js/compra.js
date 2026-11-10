@@ -5,7 +5,7 @@
 //   { id: 'm:…', nombre: 'pilas', cantidades: [], sinCantidad: true, recetas: [], manual: true } ] }
 
 import { UNIDADES } from './receta.js';
-import { HUECOS, esEspecial } from './menus.js';
+import { HUECOS, esEspecial, sumarDias, inicioSemana, leerFecha, fechaISO } from './menus.js';
 import { escalarReceta } from './escalado.js';
 import { claveIngrediente, indiceIngredientes } from './ingredientes.js';
 import { textoIngrediente } from './ficha.js';
@@ -21,6 +21,19 @@ const METRICAS = new Set(['g', 'kg', 'ml', 'cl', 'l']);
 export const entradasEntre = (menus, desde, hasta) =>
   menus.filter((e) => !esEspecial(e) && e.receta && e.fecha >= desde && e.fecha <= hasta)
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || HUECOS.indexOf(a.hueco) - HUECOS.indexOf(b.hueco));
+
+/** Periodos para generar la lista, siempre desde hoy. */
+export const PERIODOS = { semana: 'Semana actual', '2semanas': '2 semanas', mes: 'Mes completo' };
+
+/** Fechas que cubre un periodo desde `hoy`: hasta el domingo, el domingo siguiente o el último día del mes. */
+export function rangoPeriodo(hoy, periodo) {
+  if (periodo === 'mes') {
+    const d = leerFecha(hoy);
+    return { desde: hoy, hasta: fechaISO(new Date(d.getFullYear(), d.getMonth() + 1, 0, 12)) };
+  }
+  const domingo = sumarDias(inicioSemana(hoy), 6);
+  return { desde: hoy, hasta: periodo === '2semanas' ? sumarDias(domingo, 7) : domingo };
+}
 
 const redondo = (n) => Math.round(n * 100) / 100;
 

@@ -1,7 +1,7 @@
 // Vista de la lista de la compra: generarla a partir del menú, añadir cosas a mano y quitar líneas.
 
-import { generarLista, anadirALista, quitarDeLista, textoCantidades, entradasEntre } from './compra.js';
-import { sumarDias, inicioSemana, leerFecha } from './menus.js';
+import { generarLista, anadirALista, quitarDeLista, textoCantidades, entradasEntre, rangoPeriodo } from './compra.js';
+import { leerFecha } from './menus.js';
 import { hoyISO } from './vista-menu.js';
 import { $, el, aviso, ocupado } from './dom.js';
 
@@ -55,19 +55,17 @@ export function pintarCompra() {
 
 // ---------- Generar
 
+const rangoElegido = () => rangoPeriodo(hoyISO(), $('#form-compra').periodo.value);
+
 function contarRecetas() {
-  const f = $('#form-compra');
-  const n = f.desde.value && f.hasta.value && f.desde.value <= f.hasta.value
-    ? entradasEntre(app.almacen.items('menus'), f.desde.value, f.hasta.value).length
-    : 0;
-  $('#compra-cuantas').textContent = n ? `${n === 1 ? '1 receta' : `${n} recetas`} del menú en esas fechas.` : 'No hay recetas en el menú en esas fechas.';
+  const { desde, hasta } = rangoElegido();
+  const n = entradasEntre(app.almacen.items('menus'), desde, hasta).length;
+  const fechas = `del ${fechaCorta(desde)} al ${fechaCorta(hasta)}`;
+  $('#compra-cuantas').textContent = n ? `${n === 1 ? '1 receta' : `${n} recetas`} del menú ${fechas}.` : `No hay recetas en el menú ${fechas}.`;
 }
 
 function abrirGenerar() {
-  const f = $('#form-compra');
-  const hoy = hoyISO();
-  f.desde.value = hoy;
-  f.hasta.value = sumarDias(inicioSemana(hoy), 6);
+  $('#form-compra').periodo.value = 'semana';
   $('#compra-error').textContent = '';
   contarRecetas();
   $('#dlg-compra').showModal();
@@ -75,13 +73,7 @@ function abrirGenerar() {
 
 async function generar(evento) {
   evento.preventDefault();
-  const f = evento.target;
-  const desde = f.desde.value;
-  const hasta = f.hasta.value;
-  const error = $('#compra-error');
-  if (!desde || !hasta || hasta < desde) return void (error.textContent = 'Elige un rango de fechas: «hasta» no puede ser antes que «desde».');
-  if (sumarDias(desde, 62) < hasta) return void (error.textContent = 'Como mucho, dos meses de una vez.');
-  error.textContent = '';
+  const { desde, hasta } = rangoElegido();
   const ok = await guardar($('#compra-ok'), () => generarLista(app.cliente, { recetas: app.almacen.items('recetas'), menus: app.almacen.items('menus'), desde, hasta }, app.config.nombre));
   if (!ok) return;
   $('#dlg-compra').close();
@@ -108,7 +100,7 @@ export function prepararCompra(estadoApp, onCambio) {
   alCambiar = onCambio;
   $('#compra-generar').addEventListener('click', abrirGenerar);
   $('#form-compra').addEventListener('submit', generar);
-  $('#form-compra').addEventListener('input', contarRecetas);
+  $('#form-compra').addEventListener('change', contarRecetas);
   $('#compra-cancelar').addEventListener('click', () => $('#dlg-compra').close());
   $('#compra-anadir').addEventListener('submit', anadir);
 }
