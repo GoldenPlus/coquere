@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { admitida, elegirReceta, rellenarMenu, fechasEntre, rellenarYGuardar, temporada } from '../js/generador.js';
+import { admitida, elegirReceta, rellenarMenu, fechasEntre, rellenarYGuardar, temporada, estacionesEn } from '../js/generador.js';
 import { entradasDe } from '../js/menus.js';
 
 const R = (id, extra = {}) => ({ id, titulo: id, categorias: [], etiquetas: [], puntuacion: null, ...extra });
@@ -118,4 +118,10 @@ test('las de temporada pesan el doble que las de todo el año', () => {
   // Pesos 6 y 3: hasta 2/3 sale el cocido.
   assert.equal(elegirReceta({ recetas, menus: [], fecha: '2026-12-10', hueco: 'cena', azar: () => 0.6 }).id, 'cocido');
   assert.equal(elegirReceta({ recetas, menus: [], fecha: '2026-12-10', hueco: 'cena', azar: () => 0.7 }).id, 'tortilla');
+});
+
+test('estaciones que cuentan como de temporada en una fecha', () => {
+  assert.deepEqual(estacionesEn('2026-11-10'), ['otoño', 'invierno']);
+  assert.deepEqual(estacionesEn('2026-07-01'), ['verano']);
+  assert.deepEqual(estacionesEn('2026-03-15'), ['primavera', 'invierno']);
 });

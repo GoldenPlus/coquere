@@ -8,8 +8,8 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-pnO7bc+kaqtNfyh2iU6X+as7rCK1amHnIk9vH3Wu5H8='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=7261862976">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-z2yYIFchD06Z4go2/EdzR1zZY6yHrF62AjUeSMNpw70='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=49c83ccf8b">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=2c2105c5d6",
@@ -23,7 +23,7 @@
       "./js/filtros.js": "./js/filtros.js?v=42e5d71964",
       "./js/formulario-receta.js": "./js/formulario-receta.js?v=b9fd67d1ac",
       "./js/fotos.js": "./js/fotos.js?v=a3917a6171",
-      "./js/generador.js": "./js/generador.js?v=324d1f245a",
+      "./js/generador.js": "./js/generador.js?v=10e9db7e55",
       "./js/github.js": "./js/github.js?v=fd3d2078e2",
       "./js/hoy.js": "./js/hoy.js?v=ab90308406",
       "./js/ingredientes.js": "./js/ingredientes.js?v=b734b56623",
@@ -35,7 +35,7 @@
       "./js/tengo.js": "./js/tengo.js?v=3c41849c64",
       "./js/texto.js": "./js/texto.js?v=847e5e4645",
       "./js/vista-compra.js": "./js/vista-compra.js?v=d0e851c03f",
-      "./js/vista-menu.js": "./js/vista-menu.js?v=a6a21acce5",
+      "./js/vista-menu.js": "./js/vista-menu.js?v=2ace5d5a35",
       "./js/vista-tengo.js": "./js/vista-tengo.js?v=58714f8048"
   } }
   </script>
@@ -214,6 +214,18 @@
     <form id="form-rellenar" class="formulario" novalidate>
       <h2>Rellenar el menú</h2>
       <p class="ayuda">Pone una receta en cada comida y cena vacía. Lo que elegiste a mano y los huecos «Comemos fuera» o «Libre» no se tocan.</p>
+      <p id="rellenar-temporada" class="ayuda temporada"></p>
+      <details class="como-elige">
+        <summary>¿Cómo elige las recetas?</summary>
+        <ul class="ayuda">
+          <li><strong>Comida o cena:</strong> las recetas con la etiqueta «comida» solo salen en comidas y las de «cena» en cenas; sin ninguna de las dos, en ambas.</li>
+          <li><strong>Temporada:</strong> las recetas con la etiqueta «primavera», «verano», «otoño» o «invierno» salen el doble en su estación (con un mes de margen: «verano» va de mayo a septiembre, «invierno» de noviembre a marzo) y fuera de ella solo si no queda otra. Sin etiqueta de estación, valen todo el año.</li>
+          <li><strong>Sin repetir:</strong> evita las recetas que ya están en el menú en los 7 días de alrededor.</li>
+          <li><strong>Puntuación:</strong> las mejor puntuadas salen más a menudo.</li>
+          <li><strong>Categorías:</strong> las que sacaste del menú en Ajustes (por ejemplo, postres) no salen.</li>
+        </ul>
+        <p class="ayuda">Las etiquetas se ponen al editar la receta, en «Etiquetas».</p>
+      </details>
       <div class="dos">
         <label>Desde <input name="desde" type="date" required></label>
         <label>Hasta <input name="hasta" type="date" required></label>

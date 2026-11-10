@@ -403,3 +403,7 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 .tengo-usa { color: var(--suave); font-size: 0.9rem; }
 .tengo-falta { font-size: 0.9rem; color: var(--ambar-texto); }
 .tengo-todo { font-size: 0.9rem; color: var(--ok-texto); font-weight: 600; }
+
+/* Rellenar el menú: cómo elige */
+.como-elige summary { cursor: pointer; color: var(--acento); font-size: 0.9rem; }
+.como-elige ul { margin: 0.4rem 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; }

@@ -29,6 +29,14 @@ export const ESTACIONES = {
 export const estacionesDe = (receta) =>
   [...new Set(receta.etiquetas.map((e) => normalizar(e).replaceAll('ñ', 'n')).filter((e) => e in ESTACIONES))];
 
+export const NOMBRE_ESTACION = { primavera: 'primavera', verano: 'verano', otono: 'otoño', invierno: 'invierno' };
+
+/** Etiquetas de estación que cuentan como «de temporada» en esa fecha: noviembre → ['otoño', 'invierno']. */
+export function estacionesEn(fecha) {
+  const mes = leerFecha(fecha).getMonth() + 1;
+  return Object.keys(ESTACIONES).filter((e) => ESTACIONES[e].includes(mes)).map((e) => NOMBRE_ESTACION[e]);
+}
+
 /** 'temporada' (es de esta estación), 'siempre' (sin estación) o 'fuera'. */
 export function temporada(receta, fecha) {
   const estaciones = estacionesDe(receta);

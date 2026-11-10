@@ -2,7 +2,7 @@
 
 import { HUECOS, RACIONES_MAX, fechaISO, sumarDias, inicioSemana, diasDeSemana, leerFecha, entradasDe, especialDe, esEspecial, ESPECIALES, racionesFamilia, ponerReceta, quitarDeMenu, moverEnMenu, cambiarRaciones, marcarEspecial, quitarEspecial } from './menus.js';
 import { filtrarRecetas, filtrosVacios } from './filtros.js';
-import { elegirReceta, rellenarYGuardar } from './generador.js';
+import { elegirReceta, rellenarYGuardar, estacionesEn, estacionesDe, NOMBRE_ESTACION } from './generador.js';
 import { compararTitulos } from './texto.js';
 import { $, el, aviso, ocupado } from './dom.js';
 import { enlaceReceta } from './hoy.js';
@@ -257,6 +257,17 @@ async function elegir(receta, boton, origen = 'manual') {
 
 // ---------- Rellenar automáticamente
 
+/** Qué recetas son de temporada en las fechas del diálogo, o cómo conseguir que las haya. */
+function pintarTemporada() {
+  const fecha = $('#form-rellenar').desde.value || hoyISO();
+  const ahora = estacionesEn(fecha);
+  const lista = (n) => n.map((e) => `«${e}»`).join(' o ');
+  const n = app.almacen.items('recetas').filter((r) => estacionesDe(r).some((e) => ahora.includes(NOMBRE_ESTACION[e]))).length;
+  $('#rellenar-temporada').textContent = n
+    ? `🍂 De temporada en estas fechas: ${n === 1 ? '1 receta' : `${n} recetas`} con la etiqueta ${lista(ahora)}; saldrán más a menudo.`
+    : `🍂 Ninguna receta tiene la etiqueta ${lista(ahora)}. Pónsela a las de temporada para que salgan más a menudo en estas fechas.`;
+}
+
 function abrirRellenar() {
   const f = $('#form-rellenar');
   const hoy = hoyISO();
@@ -265,6 +276,7 @@ function abrirRellenar() {
   f.hasta.value = domingo;
   f.reemplazar.checked = false;
   $('#rellenar-error').textContent = '';
+  pintarTemporada();
   $('#dlg-rellenar').showModal();
 }
 
@@ -304,6 +316,7 @@ export function prepararMenu(estadoApp, onCambio) {
   $('#elegir-azar').addEventListener('click', (e) => elegirAlAzar(e.currentTarget));
   $('#semana-rellenar').addEventListener('click', abrirRellenar);
   $('#form-rellenar').addEventListener('submit', rellenar);
+  $('#form-rellenar').desde.addEventListener('change', pintarTemporada);
   $('#rellenar-cancelar').addEventListener('click', () => $('#dlg-rellenar').close());
   for (const b of $('#elegir-especial').querySelectorAll('button')) b.addEventListener('click', () => elegirEspecial(b));
   $('#elegir-cancelar').addEventListener('click', () => $('#dlg-elegir').close());
