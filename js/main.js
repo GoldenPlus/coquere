@@ -17,6 +17,7 @@ import { inicioSemana, racionesFamilia, guardarAjustesFamilia, usosDeReceta, qui
 import { prepararMenu, pintarMenu, hoyISO } from './vista-menu.js';
 import { prepararCompra, pintarCompra } from './vista-compra.js';
 import { menuDelDia, construirHoy } from './hoy.js';
+import { prepararTengo, pintarTengo } from './vista-tengo.js';
 import { GRUPOS, LIMITE_MAX, limitesProteinas } from './equilibrio.js';
 
 function mostrarEstado(texto, esError = false) {
@@ -35,12 +36,13 @@ function vistaEnDireccion() {
   const menu = location.hash.match(/^#menu(?:\/(\d{4}-\d{2}-\d{2}))?$/);
   if (menu) return { tipo: 'menu', lunes: inicioSemana(menu[1] && esFechaISO(menu[1]) ? menu[1] : hoyISO()) };
   if (location.hash === '#compra') return { tipo: 'compra' };
+  if (location.hash === '#tengo') return { tipo: 'tengo' };
   return { tipo: 'recetas' };
 }
 const idEnDireccion = () => (vistaEnDireccion().tipo === 'receta' ? vistaEnDireccion().id : null);
 
 /** Dónde estaba cada vista al salir de ella, para volver al mismo sitio. */
-const scrollPorVista = { recetas: 0, menu: 0, compra: 0 };
+const scrollPorVista = { recetas: 0, menu: 0, compra: 0, tengo: 0 };
 let vistaAnterior = 'recetas';
 /** Búsqueda y filtros del listado: duran mientras la app está abierta (también al ir y volver de una ficha). */
 let filtros = filtrosVacios();
@@ -53,21 +55,26 @@ function render() {
   const enFicha = hayDatos && vista.tipo === 'receta';
   const enMenu = hayDatos && vista.tipo === 'menu';
   const enCompra = hayDatos && vista.tipo === 'compra';
+  const enTengo = hayDatos && vista.tipo === 'tengo';
+  const otraVista = enFicha || enMenu || enCompra || enTengo;
   $('#pestanas').hidden = !hayDatos || enFicha;
-  $('#recetario').hidden = !hayDatos || enFicha || enMenu || enCompra;
+  $('#recetario').hidden = !hayDatos || otraVista;
   $('#vista-menu').hidden = !enMenu;
   $('#vista-compra').hidden = !enCompra;
+  $('#vista-tengo').hidden = !enTengo;
   $('#vista-ficha').hidden = !enFicha;
-  $('#btn-nueva').hidden = !hayDatos || enFicha || enMenu || enCompra;
-  $('#pestana-recetas').toggleAttribute('aria-current', !enMenu && !enCompra);
+  $('#btn-nueva').hidden = !hayDatos || otraVista;
+  $('#pestana-recetas').toggleAttribute('aria-current', !enMenu && !enCompra && !enTengo);
   $('#pestana-menu').toggleAttribute('aria-current', enMenu);
   $('#pestana-compra').toggleAttribute('aria-current', enCompra);
+  $('#pestana-tengo').toggleAttribute('aria-current', enTengo);
   pantallaEncendida(enFicha);
   if (!hayDatos) return;
   const recetas = app.almacen.items('recetas');
   if (enFicha) return pintarFicha(recetas.find((r) => r.id === vista.id), vista.raciones);
   if (enMenu) return pintarMenu(vista.lunes);
   if (enCompra) return pintarCompra();
+  if (enTengo) return pintarTengo();
   const hoy = hoyISO();
   $('#hoy').hidden = false;
   $('#hoy').replaceChildren(...construirHoy(menuDelDia(app.almacen.items('menus'), recetas, hoy), hoy));
@@ -130,7 +137,7 @@ function cambioDeVista() {
   render();
   const { tipo } = vistaEnDireccion();
   if (tipo !== 'receta') fichaPintada = null;
-  $('#ficha-volver').textContent = history.state?.desde === 'menu' ? '← Menú' : '← Recetas';
+  $('#ficha-volver').textContent = { menu: '← Menú', tengo: '← Tengo' }[history.state?.desde] ?? '← Recetas';
   if (tipo !== vistaAnterior) window.scrollTo(0, tipo === 'receta' ? 0 : scrollPorVista[tipo]);
   vistaAnterior = tipo;
 }
@@ -352,7 +359,7 @@ function iniciar() {
   $('#ficha-editar').addEventListener('click', () => fichaActual && abrirEditarReceta(fichaActual));
   $('#ficha-borrar').addEventListener('click', borrarFicha);
   // Marca las fichas abiertas desde la lista o el menú, para que «←» equivalga al botón atrás.
-  for (const [contenedor, desde] of [['#listado', 'recetas'], ['#hoy', 'recetas'], ['#vista-menu', 'menu']]) {
+  for (const [contenedor, desde] of [['#listado', 'recetas'], ['#hoy', 'recetas'], ['#vista-menu', 'menu'], ['#vista-tengo', 'tengo']]) {
     $(contenedor).addEventListener('click', (e) => {
       const enlace = e.target.closest('a[href^="#receta/"]');
       if (!enlace) return;
@@ -363,6 +370,7 @@ function iniciar() {
   }
   prepararMenu(app, render);
   prepararCompra(app, render);
+  prepararTengo(app);
 
   window.addEventListener('online', recargar);
   window.addEventListener('offline', () => mostrarEstado('Sin conexión. Puedes consultar, pero no guardar cambios.'));

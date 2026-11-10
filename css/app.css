@@ -390,3 +390,16 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 .limites label { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; font-size: 0.9rem; }
 .limites label.sub { color: var(--suave); }
 .limites input { width: 3.6rem; }
+
+/* «Tengo»: recetas por lo que tienes */
+#vista-tengo .anadir-compra { margin-top: 0.6rem; }
+#tengo-sugerencias { margin: -0.2rem 0 0.5rem; }
+.tengo-fichas { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+.tengo-fichas .fichas:empty { display: none; }
+.lista-tengo { list-style: none; margin: 0.5rem 0 0; padding: 0; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); }
+.lista-tengo:empty { display: none; }
+.tengo-receta { display: grid; gap: 0.1rem; padding: 0.55rem 0.75rem; border-top: 1px solid var(--borde); }
+.tengo-receta:first-child { border-top: 0; }
+.tengo-usa { color: var(--suave); font-size: 0.9rem; }
+.tengo-falta { font-size: 0.9rem; color: var(--ambar-texto); }
+.tengo-todo { font-size: 0.9rem; color: var(--ok-texto); font-weight: 600; }

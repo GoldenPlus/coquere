@@ -8,12 +8,12 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-JxKQXvBymHSuddGqxmhV+tJ4DY3uQjyTUMqW1fJxok0='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=d4bdd61c1c">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-FR90pbOSrPn3NfK3Y+uy6YlgcuhykxurWU5asSNTb5U='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=7261862976">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=2c2105c5d6",
-      "./js/compra.js": "./js/compra.js?v=deb96db98c",
+      "./js/compra.js": "./js/compra.js?v=a33d0a599b",
       "./js/config.js": "./js/config.js?v=640e00eb72",
       "./js/dom.js": "./js/dom.js?v=749c587cc2",
       "./js/equilibrio.js": "./js/equilibrio.js?v=6fd866f00c",
@@ -28,16 +28,18 @@
       "./js/hoy.js": "./js/hoy.js?v=ab90308406",
       "./js/ingredientes.js": "./js/ingredientes.js?v=b734b56623",
       "./js/listado.js": "./js/listado.js?v=f991ec5e74",
-      "./js/main.js": "./js/main.js?v=55c4f75aeb",
+      "./js/main.js": "./js/main.js?v=186c9962d0",
       "./js/menus.js": "./js/menus.js?v=f506286cb2",
       "./js/receta.js": "./js/receta.js?v=3304721f62",
       "./js/recetas.js": "./js/recetas.js?v=89fc9e0555",
+      "./js/tengo.js": "./js/tengo.js?v=3c41849c64",
       "./js/texto.js": "./js/texto.js?v=847e5e4645",
       "./js/vista-compra.js": "./js/vista-compra.js?v=8e3971cbf3",
-      "./js/vista-menu.js": "./js/vista-menu.js?v=a6a21acce5"
+      "./js/vista-menu.js": "./js/vista-menu.js?v=a6a21acce5",
+      "./js/vista-tengo.js": "./js/vista-tengo.js?v=58714f8048"
   } }
   </script>
-  <script type="module" src="js/main.js?v=55c4f75aeb"></script>
+  <script type="module" src="js/main.js?v=186c9962d0"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -54,6 +56,7 @@
       <a id="pestana-recetas" href="#">Recetas</a>
       <a id="pestana-menu" href="#menu">Menú</a>
       <a id="pestana-compra" href="#compra">Compra</a>
+      <a id="pestana-tengo" href="#tengo">Tengo</a>
     </nav>
     <p id="estado" class="estado" role="status"></p>
     <section id="recetario" hidden>
@@ -89,6 +92,16 @@
         <button type="submit">Añadir</button>
       </form>
       <ul id="compra-lista" class="lista-compra"></ul>
+    </section>
+    <section id="vista-tengo" hidden>
+      <form id="tengo-anadir" class="anadir-compra">
+        <input name="texto" maxlength="120" placeholder="Tengo… pollo, calabacín, nata" aria-label="Ingredientes que tienes" autocomplete="off" enterkeyhint="done" autocapitalize="off">
+        <button type="submit">Añadir</button>
+      </form>
+      <div id="tengo-sugerencias" class="sugerencias"></div>
+      <div class="tengo-fichas"><div id="tengo-fichas" class="fichas" aria-label="Lo que tienes"></div><button id="tengo-vaciar" type="button" class="enlace" hidden>Vaciar</button></div>
+      <p id="tengo-resumen" class="ayuda" role="status"></p>
+      <ul id="tengo-resultados" class="lista-tengo"></ul>
     </section>
     <section id="vista-ficha" hidden>
       <div class="barra-ficha">

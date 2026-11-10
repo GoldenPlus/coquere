@@ -13,7 +13,7 @@ import { limpiar } from './texto.js';
 
 export const FICHERO_LISTA = 'lista.json';
 /** Sin cantidad en la lista: se compran «a ojo». */
-const SIN_CANTIDAD = new Set(['al gusto', 'pizca', 'chorro']);
+export const SIN_CANTIDAD = new Set(['al gusto', 'pizca', 'chorro']);
 /** Se muestran con decimales, no con fracciones. */
 const METRICAS = new Set(['g', 'kg', 'ml', 'cl', 'l']);
 
