@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { admitida, elegirReceta, rellenarMenu, fechasEntre, rellenarYGuardar } from '../js/generador.js';
+import { admitida, elegirReceta, rellenarMenu, fechasEntre, rellenarYGuardar, temporada } from '../js/generador.js';
 import { entradasDe } from '../js/menus.js';
 
 const R = (id, extra = {}) => ({ id, titulo: id, categorias: [], etiquetas: [], puntuacion: null, ...extra });
@@ -94,4 +94,28 @@ test('rellenar y guardar trabaja sobre la versión más reciente de menus.json',
   assert.equal(r.puestas, 1);
   assert.deepEqual(r.datos.items.map((e) => `${e.hueco}:${e.origen}`), ['comida:manual', 'cena:auto']);
   assert.deepEqual(mensajes, ['Menú: rellena del 2026-11-09 al 2026-11-09 (por Ana)']);
+});
+
+test('temporada: su estación con un mes de margen; sin estación, todo el año', () => {
+  assert.equal(temporada(R('g', { etiquetas: ['Verano'] }), '2026-07-15'), 'temporada');
+  assert.equal(temporada(R('g', { etiquetas: ['verano'] }), '2026-09-30'), 'temporada');
+  assert.equal(temporada(R('g', { etiquetas: ['verano'] }), '2026-11-10'), 'fuera');
+  assert.equal(temporada(R('c', { etiquetas: ['invierno'] }), '2026-11-10'), 'temporada');
+  assert.equal(temporada(R('c', { etiquetas: ['Otoño'] }), '2026-11-10'), 'temporada');
+  assert.equal(temporada(R('x', { etiquetas: ['verano', 'invierno'] }), '2026-01-10'), 'temporada');
+  assert.equal(temporada(R('t', { etiquetas: ['rápida'] }), '2026-07-15'), 'siempre');
+});
+
+test('en noviembre salen las de invierno y no las de verano; si solo hay de verano, salen igual', () => {
+  const recetas = [R('gazpacho', { etiquetas: ['verano'] }), R('cocido', { etiquetas: ['invierno'] })];
+  for (const x of [0, 0.5, 0.99]) assert.equal(elegirReceta({ recetas, menus: [], fecha: '2026-11-10', hueco: 'comida', azar: () => x }).id, 'cocido');
+  for (const x of [0, 0.99]) assert.equal(elegirReceta({ recetas, menus: [], fecha: '2026-07-10', hueco: 'comida', azar: () => x }).id, 'gazpacho');
+  assert.equal(elegirReceta({ recetas: [recetas[0]], menus: [], fecha: '2026-11-10', hueco: 'comida' }).id, 'gazpacho');
+});
+
+test('las de temporada pesan el doble que las de todo el año', () => {
+  const recetas = [R('cocido', { etiquetas: ['invierno'] }), R('tortilla')];
+  // Pesos 6 y 3: hasta 2/3 sale el cocido.
+  assert.equal(elegirReceta({ recetas, menus: [], fecha: '2026-12-10', hueco: 'cena', azar: () => 0.6 }).id, 'cocido');
+  assert.equal(elegirReceta({ recetas, menus: [], fecha: '2026-12-10', hueco: 'cena', azar: () => 0.7 }).id, 'tortilla');
 });

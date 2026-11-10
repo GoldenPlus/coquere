@@ -7,13 +7,35 @@
 // - No repetir: una receta que ya está en el menú hasta DIAS_SIN_REPETIR días antes o después se evita
 //   (si no queda otra, se acepta la que lleve más tiempo sin salir).
 // - Puntuación: sorteo con más peso para las mejor puntuadas; sin puntuar cuenta como un 3.
-// Las reglas futuras (equilibrio, temporada…) se suman como pesos en `pesoDe`.
+// - Temporada (PL-07): con etiqueta de estación (primavera, verano, otoño, invierno) solo sale en su
+//   estación, con un mes de margen a cada lado (gazpacho de mayo a septiembre, cocido de noviembre a
+//   marzo), y pesa el doble; sin etiqueta de estación vale todo el año. Si no queda otra, sale igual.
+// Las reglas futuras (equilibrio…) se suman como pesos en `pesoDe`.
 
 import { HUECOS, FICHERO_MENUS, entradasDe, esEspecial, sumarDias, leerFecha, racionesFamilia, conEntrada } from './menus.js';
 import { normalizar } from './texto.js';
 
 export const DIAS_SIN_REPETIR = 7;
 const PESO_PUNTUACION = { 1: 1, 2: 2, 3: 3, 4: 5, 5: 8 };
+/** Meses (1-12) en que encaja cada estación: sus tres meses y uno de margen a cada lado. */
+export const ESTACIONES = {
+  primavera: [2, 3, 4, 5, 6],
+  verano: [5, 6, 7, 8, 9],
+  otono: [8, 9, 10, 11, 12],
+  invierno: [11, 12, 1, 2, 3],
+};
+
+/** Estaciones con las que está etiquetada la receta (normalizadas: «otoño» → 'otono'). */
+export const estacionesDe = (receta) =>
+  [...new Set(receta.etiquetas.map((e) => normalizar(e).replaceAll('ñ', 'n')).filter((e) => e in ESTACIONES))];
+
+/** 'temporada' (es de esta estación), 'siempre' (sin estación) o 'fuera'. */
+export function temporada(receta, fecha) {
+  const estaciones = estacionesDe(receta);
+  if (!estaciones.length) return 'siempre';
+  const mes = leerFecha(fecha).getMonth() + 1;
+  return estaciones.some((e) => ESTACIONES[e].includes(mes)) ? 'temporada' : 'fuera';
+}
 
 /** Categorías que la familia ha sacado del menú (ajustes.json). */
 export const categoriasFuera = (ajustes) => (Array.isArray(ajustes?.categoriasFueraDelMenu) ? ajustes.categoriasFueraDelMenu : []);
@@ -38,7 +60,8 @@ function distanciaAlUsoMasCercano(menus, idReceta, fecha) {
   return min;
 }
 
-const pesoDe = (receta) => PESO_PUNTUACION[receta.puntuacion] ?? PESO_PUNTUACION[3];
+const pesoDe = (fecha) => (receta) =>
+  (PESO_PUNTUACION[receta.puntuacion] ?? PESO_PUNTUACION[3]) * (temporada(receta, fecha) === 'temporada' ? 2 : 1);
 
 /** Sorteo ponderado. `azar()` devuelve un número en [0, 1). */
 function sortear(opciones, peso, azar) {
@@ -57,14 +80,18 @@ function sortear(opciones, peso, azar) {
  */
 export function elegirReceta({ recetas, menus, ajustes, fecha, hueco, excluir = [], azar = Math.random }) {
   const fuera = new Set(excluir);
-  const admitidas = recetas.filter((r) => !fuera.has(r.id) && admitida(r, hueco, ajustes));
-  if (!admitidas.length) return null;
+  const validas = recetas.filter((r) => !fuera.has(r.id) && admitida(r, hueco, ajustes));
+  if (!validas.length) return null;
+  // Las de otra estación, solo si no hay nada más.
+  const deTemporada = validas.filter((r) => temporada(r, fecha) !== 'fuera');
+  const admitidas = deTemporada.length ? deTemporada : validas;
+  const peso = pesoDe(fecha);
   const distancia = new Map(admitidas.map((r) => [r.id, distanciaAlUsoMasCercano(menus, r.id, fecha)]));
   const nuevas = admitidas.filter((r) => distancia.get(r.id) > DIAS_SIN_REPETIR);
-  if (nuevas.length) return sortear(nuevas, pesoDe, azar);
+  if (nuevas.length) return sortear(nuevas, peso, azar);
   // Todas se han usado hace poco: la que más lejos quede (y, a igualdad, por sorteo).
   const lejos = Math.max(...distancia.values());
-  return sortear(admitidas.filter((r) => distancia.get(r.id) === lejos), pesoDe, azar);
+  return sortear(admitidas.filter((r) => distancia.get(r.id) === lejos), peso, azar);
 }
 
 /** Fechas de `desde` a `hasta`, ambas incluidas. */

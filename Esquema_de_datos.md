@@ -42,7 +42,7 @@ El código del esquema está en `js/receta.js` (`normalizarReceta`, `validarRece
 | `id` | texto | sí | Lo genera la app (`r` + 12 caracteres). No cambia nunca; los menús lo usarán para enlazar recetas. |
 | `titulo` | texto | sí | |
 | `categorias` | lista de textos | lista, puede estar vacía | Tipo de plato: «Primeros», «Postres»… |
-| `etiquetas` | lista de textos | lista, puede estar vacía | Libres: «vegetariana», «rápida»… Sin repetidos (no distingue tildes ni mayúsculas). |
+| `etiquetas` | lista de textos | lista, puede estar vacía | Libres: «vegetariana», «rápida»… Sin repetidos (no distingue tildes ni mayúsculas). El generador usa «comida»/«cena» y las estaciones «primavera», «verano», «otoño», «invierno» (prefiere las de la estación, con un mes de margen). |
 | `proteinas` | lista de textos | no (falta en recetas antiguas: equivale a vacía) | De la lista fija: `carne blanca`, `carne roja`, `pescado blanco`, `pescado azul`, `marisco`, `huevo`, `legumbre`, `vegetal`. Sin repetidos y en ese orden; `vegetal` (sin carne, pescado, huevo ni legumbre) no se combina con las demás. Sirve para equilibrar el menú semanal. |
 | `raciones` | entero ≥ 1 | sí | Base para el escalado. Una receta nueva parte de 4. |
 | `tiempo` | entero ≥ 0 o `null` | no | Minutos totales. |
