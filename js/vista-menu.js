@@ -5,6 +5,7 @@ import { filtrarRecetas, filtrosVacios } from './filtros.js';
 import { elegirReceta, rellenarYGuardar } from './generador.js';
 import { compararTitulos } from './texto.js';
 import { $, el, aviso, ocupado } from './dom.js';
+import { enlaceReceta } from './hoy.js';
 
 let app = null;
 let alCambiar = () => {};
@@ -96,7 +97,7 @@ function plato(entrada, recetas, posicion, total) {
   return el(
     'div',
     { class: 'plato' },
-    el('a', { class: 'hueco-receta', href: `#receta/${encodeURIComponent(receta.id)}` }, receta.titulo,
+    el('a', { class: 'hueco-receta', href: enlaceReceta(receta.id, raciones) }, receta.titulo,
       entrada.origen === 'auto' && el('span', { class: 'marca-auto', title: 'Puesta por la app', 'aria-label': '(puesta por la app)' }, '✨')),
     el(
       'div',

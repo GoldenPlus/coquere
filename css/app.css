@@ -365,3 +365,12 @@ button.enlace { background: none; border: 0; padding: 0 0 0 0.6rem; color: var(-
 .linea-compra .para { grid-column: 1 / -1; color: var(--suave); font-size: 0.85rem; }
 .linea-compra .icono { font-size: 1.05rem; padding: 0.2em 0.45em; }
 .compra-vacia { color: var(--suave); text-align: center; padding: 1.5rem 0.5rem; }
+
+/* Tarjeta «Hoy» encima del listado */
+.tarjeta-hoy { background: var(--superficie); border: 1px solid var(--acento); border-radius: var(--radio); padding: 0.5rem 0.75rem 0.6rem; margin-bottom: 0.75rem; }
+.tarjeta-hoy h2 { margin: 0 0 0.2rem; font-size: 1rem; }
+.hoy-hueco { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr); gap: 0.5rem; padding: 0.3rem 0; border-top: 1px dashed var(--borde); }
+.hoy-platos { display: grid; gap: 0.2rem; min-width: 0; }
+.hoy-raciones { font-weight: 400; color: var(--suave); font-size: 0.9rem; }
+.hoy-vacio { margin: 0; color: var(--suave); }
+.hoy-sin { color: var(--suave); }

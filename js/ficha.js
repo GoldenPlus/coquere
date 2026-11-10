@@ -91,7 +91,7 @@ function seccionNotas(r, onNota) {
  * `onPuntuar(n, grupo)` y `onNota(textarea, boton)` guardan; sin ellos la ficha es de solo lectura.
  * `verFoto(img, ruta)` carga la foto del repo privado.
  */
-export function construirFicha(r, { onPuntuar, onNota, verFoto } = {}) {
+export function construirFicha(r, { onPuntuar, onNota, verFoto, raciones: inicial = null } = {}) {
   let foto = null;
   if (r.foto && verFoto) {
     foto = el('img', { class: 'ficha-foto', alt: `Foto: ${r.titulo}` });
@@ -99,8 +99,9 @@ export function construirFicha(r, { onPuntuar, onNota, verFoto } = {}) {
   }
   const ingredientes = el('div', {});
   const aviso = el('p', { class: 'aviso-raciones', hidden: true });
-  const raciones = selectorRaciones(r, (n) => pintarIngredientes(ingredientes, aviso, r, n));
-  pintarIngredientes(ingredientes, aviso, r, r.raciones);
+  const empieza = Math.min(50, Math.max(1, inicial ?? r.raciones));
+  const raciones = selectorRaciones(r, (n) => pintarIngredientes(ingredientes, aviso, r, n), empieza);
+  pintarIngredientes(ingredientes, aviso, r, empieza);
   const datos = [
     ['Tiempo', formatearTiempo(r.tiempo)],
     ['Dificultad', NOMBRES_DIFICULTAD[r.dificultad] ?? ''],
@@ -138,8 +139,8 @@ export function construirFicha(r, { onPuntuar, onNota, verFoto } = {}) {
 }
 
 /** Recuadro «Raciones» con − y +: cambia las cantidades que se ven, no la receta guardada. */
-function selectorRaciones(r, alCambiar) {
-  let n = r.raciones;
+function selectorRaciones(r, alCambiar, inicial = r.raciones) {
+  let n = inicial;
   const valor = el('dd', {}, String(n));
   const menos = el('button', { type: 'button', class: 'icono', 'aria-label': 'Menos raciones' }, '−');
   const mas = el('button', { type: 'button', class: 'icono', 'aria-label': 'Más raciones' }, '+');
@@ -156,6 +157,8 @@ function selectorRaciones(r, alCambiar) {
   const caja = el('div', { class: 'datos-raciones' }, el('dt', {}, 'Raciones'), el('div', { class: 'paso-raciones' }, menos, valor, mas));
   caja.volver = () => poner(r.raciones);
   menos.disabled = n <= 1;
+  mas.disabled = n >= 50;
+  caja.classList.toggle('cambiado', n !== r.raciones);
   return caja;
 }
 

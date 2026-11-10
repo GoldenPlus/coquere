@@ -8,8 +8,8 @@
   <title>Coquere</title>
   <link rel="icon" href="icono.svg" type="image/svg+xml">
   <!-- versiones: generado por npm run versionar -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-/ph0Ax73IdvE6vmiErZePCGGucclbYzODqzIRBI7Es8='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-  <link rel="stylesheet" href="css/app.css?v=2d15beb498">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-SmKBkrI+m0MGqwTtvD/cGx7YNgRRbXREWw5cJa1YiEE='; style-src 'self'; img-src 'self' blob: data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/app.css?v=0fc613009d">
   <script type="importmap">
   { "imports": {
       "./js/almacen.js": "./js/almacen.js?v=2c2105c5d6",
@@ -18,24 +18,25 @@
       "./js/dom.js": "./js/dom.js?v=749c587cc2",
       "./js/escalado.js": "./js/escalado.js?v=2ed029e492",
       "./js/estado.js": "./js/estado.js?v=941b583a8f",
-      "./js/ficha.js": "./js/ficha.js?v=8a5d9a6558",
+      "./js/ficha.js": "./js/ficha.js?v=dccf38778b",
       "./js/filtros.js": "./js/filtros.js?v=42e5d71964",
       "./js/formulario-receta.js": "./js/formulario-receta.js?v=b9fd67d1ac",
       "./js/fotos.js": "./js/fotos.js?v=a3917a6171",
       "./js/generador.js": "./js/generador.js?v=550acf399d",
       "./js/github.js": "./js/github.js?v=fd3d2078e2",
+      "./js/hoy.js": "./js/hoy.js?v=ab90308406",
       "./js/ingredientes.js": "./js/ingredientes.js?v=b734b56623",
       "./js/listado.js": "./js/listado.js?v=f991ec5e74",
-      "./js/main.js": "./js/main.js?v=d0e1339342",
+      "./js/main.js": "./js/main.js?v=6051a85b05",
       "./js/menus.js": "./js/menus.js?v=69235cdc4b",
       "./js/receta.js": "./js/receta.js?v=3304721f62",
       "./js/recetas.js": "./js/recetas.js?v=89fc9e0555",
       "./js/texto.js": "./js/texto.js?v=847e5e4645",
       "./js/vista-compra.js": "./js/vista-compra.js?v=8e3971cbf3",
-      "./js/vista-menu.js": "./js/vista-menu.js?v=e63197a9b5"
+      "./js/vista-menu.js": "./js/vista-menu.js?v=93224973ed"
   } }
   </script>
-  <script type="module" src="js/main.js?v=d0e1339342"></script>
+  <script type="module" src="js/main.js?v=6051a85b05"></script>
   <!-- /versiones -->
 </head>
 <body>
@@ -55,6 +56,7 @@
     </nav>
     <p id="estado" class="estado" role="status"></p>
     <section id="recetario" hidden>
+      <div id="hoy" class="tarjeta-hoy" hidden></div>
       <div class="buscador">
         <input id="buscar" type="search" placeholder="Buscar por título o ingrediente" aria-label="Buscar recetas" autocomplete="off" enterkeyhint="search">
         <button id="btn-filtros" type="button" class="secundario" aria-expanded="false" aria-controls="filtros">Filtros</button>

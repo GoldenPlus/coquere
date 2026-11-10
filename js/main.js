@@ -16,6 +16,7 @@ import { construirFicha, pantallaEncendida, puedeMantenerPantalla } from './fich
 import { inicioSemana, racionesFamilia, guardarAjustesFamilia, usosDeReceta, quitarRecetaDeMenus, leerFecha, esFechaISO } from './menus.js';
 import { prepararMenu, pintarMenu, hoyISO } from './vista-menu.js';
 import { prepararCompra, pintarCompra } from './vista-compra.js';
+import { menuDelDia, construirHoy } from './hoy.js';
 
 function mostrarEstado(texto, esError = false) {
   const nodo = $('#estado');
@@ -28,8 +29,8 @@ function mostrarEstado(texto, esError = false) {
  * y cualquier otra cosa, el listado de recetas.
  */
 function vistaEnDireccion() {
-  const ficha = location.hash.match(/^#receta\/(.+)$/);
-  if (ficha) return { tipo: 'receta', id: decodeURIComponent(ficha[1]) };
+  const ficha = location.hash.match(/^#receta\/([^/]+)(?:\/(\d{1,2}))?$/);
+  if (ficha) return { tipo: 'receta', id: decodeURIComponent(ficha[1]), raciones: ficha[2] ? Number(ficha[2]) : null };
   const menu = location.hash.match(/^#menu(?:\/(\d{4}-\d{2}-\d{2}))?$/);
   if (menu) return { tipo: 'menu', lunes: inicioSemana(menu[1] && esFechaISO(menu[1]) ? menu[1] : hoyISO()) };
   if (location.hash === '#compra') return { tipo: 'compra' };
@@ -63,9 +64,12 @@ function render() {
   pantallaEncendida(enFicha);
   if (!hayDatos) return;
   const recetas = app.almacen.items('recetas');
-  if (enFicha) return pintarFicha(recetas.find((r) => r.id === vista.id));
+  if (enFicha) return pintarFicha(recetas.find((r) => r.id === vista.id), vista.raciones);
   if (enMenu) return pintarMenu(vista.lunes);
   if (enCompra) return pintarCompra();
+  const hoy = hoyISO();
+  $('#hoy').hidden = false;
+  $('#hoy').replaceChildren(...construirHoy(menuDelDia(app.almacen.items('menus'), recetas, hoy), hoy));
   const visibles = filtrarRecetas(recetas, filtros);
   const filtrando = visibles.length !== recetas.length || filtros.texto.trim() !== '' || filtrosActivos(filtros) > 0;
   const total = recetas.length === 1 ? '1 receta' : `${recetas.length} recetas`;
@@ -105,16 +109,16 @@ let fichaPintada = null;
 /** Receta mostrada en la ficha (para Editar y Borrar). */
 let fichaActual = null;
 
-function pintarFicha(receta) {
+function pintarFicha(receta, raciones = null) {
   fichaActual = receta ?? null;
   $('#ficha-editar').hidden = !receta;
   $('#ficha-borrar').hidden = !receta;
   // Si se actualiza desde GitHub y la receta no ha cambiado, no se redibuja: se conservan los pasos tachados.
-  const clave = receta ? JSON.stringify(receta) : 'ninguna';
+  const clave = receta ? JSON.stringify([receta, raciones]) : 'ninguna';
   if (clave === fichaPintada && !$('#vista-ficha').hidden) return;
   fichaPintada = clave;
   $('#ficha').replaceChildren(
-    receta ? construirFicha(receta, { onPuntuar: puntuar, onNota: guardarNota, verFoto }) : el('p', { class: 'vacio' }, 'No se encuentra esta receta. Puede que la hayan borrado desde otro dispositivo.'),
+    receta ? construirFicha(receta, { onPuntuar: puntuar, onNota: guardarNota, verFoto, raciones }) : el('p', { class: 'vacio' }, 'No se encuentra esta receta. Puede que la hayan borrado desde otro dispositivo.'),
   );
   $('#ficha-pantalla').hidden = !(receta && puedeMantenerPantalla());
 }
@@ -325,7 +329,7 @@ function iniciar() {
   $('#ficha-editar').addEventListener('click', () => fichaActual && abrirEditarReceta(fichaActual));
   $('#ficha-borrar').addEventListener('click', borrarFicha);
   // Marca las fichas abiertas desde la lista o el menú, para que «←» equivalga al botón atrás.
-  for (const [contenedor, desde] of [['#listado', 'recetas'], ['#vista-menu', 'menu']]) {
+  for (const [contenedor, desde] of [['#listado', 'recetas'], ['#hoy', 'recetas'], ['#vista-menu', 'menu']]) {
     $(contenedor).addEventListener('click', (e) => {
       const enlace = e.target.closest('a[href^="#receta/"]');
       if (!enlace) return;
