@@ -55,13 +55,16 @@ export function pintarCompra() {
 
 // ---------- Generar
 
+/** Cómo se nombra cada opción del selector en el texto de debajo. */
+const PERIODO_EN_TEXTO = { semana: 'esta semana', '2semanas': 'estas dos semanas', mes: 'este mes' };
+
 const rangoElegido = () => rangoPeriodo(hoyISO(), $('#form-compra').periodo.value);
 
 function contarRecetas() {
   const { desde, hasta } = rangoElegido();
   const n = entradasEntre(app.almacen.items('menus'), desde, hasta).length;
-  const fechas = `del ${fechaCorta(desde)} al ${fechaCorta(hasta)}`;
-  $('#compra-cuantas').textContent = n ? `${n === 1 ? '1 receta' : `${n} recetas`} del menú ${fechas}.` : `No hay recetas en el menú ${fechas}.`;
+  const periodo = PERIODO_EN_TEXTO[$('#form-compra').periodo.value];
+  $('#compra-cuantas').textContent = n ? `${n === 1 ? '1 receta' : `${n} recetas`} en el menú ${periodo}.` : `No hay recetas en el menú ${periodo}.`;
 }
 
 function abrirGenerar() {
