@@ -18,6 +18,7 @@ import { prepararMenu, pintarMenu, hoyISO } from './vista-menu.js';
 import { prepararCompra, pintarCompra } from './vista-compra.js';
 import { menuDelDia, construirHoy, cocinarDoble, textoCocinarDoble } from './hoy.js';
 import { prepararTengo, pintarTengo } from './vista-tengo.js';
+import { iniciarDictado } from './voz.js';
 import { GRUPOS, LIMITE_MAX, limitesProteinas } from './equilibrio.js';
 
 function mostrarEstado(texto, esError = false) {
@@ -384,6 +385,7 @@ function iniciar() {
   prepararMenu(app, render);
   prepararCompra(app, render);
   prepararTengo(app);
+  iniciarDictado();
 
   window.addEventListener('online', recargar);
   window.addEventListener('offline', () => mostrarEstado('Sin conexión. Puedes consultar, pero no guardar cambios.'));
