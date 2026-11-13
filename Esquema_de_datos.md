@@ -71,7 +71,7 @@ Solo se admiten estas, para que el escalado y la lista de la compra puedan sumar
 | --- | --- |
 | Masa | `g`, `kg` (1000 g) |
 | Volumen | `ml`, `cl` (10 ml), `l` (1000 ml), `cdta` (5 ml), `cda` (15 ml), `taza` (240 ml), `vaso` (200 ml) |
-| Recuento | `unidad`, `diente`, `rodaja`, `loncha`, `lata`, `sobre`, `manojo`, `ramita`, `pizca`, `chorro`: cada una solo se suma consigo misma |
+| Recuento | `unidad`, `diente`, `rodaja`, `loncha`, `tira`, `lata`, `sobre`, `manojo`, `ramita`, `pizca`, `chorro`: cada una solo se suma consigo misma |
 | Sin cantidad | `al gusto`: la cantidad siempre es `null` |
 
 Añadir una unidad es seguro (basta con incluirla en `UNIDADES`); quitarla o renombrarla obligaría a migrar recetas.

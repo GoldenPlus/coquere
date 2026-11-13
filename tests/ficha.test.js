@@ -20,6 +20,8 @@ test('textoIngrediente se lee como en un recetario', () => {
   assert.equal(t(750, 'g', 'patata', 'nueva'), '750 g de patata, nueva');
   assert.equal(t(6, 'unidad', 'huevos', 'grandes'), '6 huevos, grandes');
   assert.equal(t(2, 'diente', 'ajo'), '2 dientes de ajo');
+  assert.equal(t(1, 'tira', 'costilla de cerdo'), '1 tira de costilla de cerdo');
+  assert.equal(t(2, 'tira', 'costilla de cerdo'), '2 tiras de costilla de cerdo');
   assert.equal(t(1, 'diente', 'ajo'), '1 diente de ajo');
   assert.equal(t(0.5, 'cdta', 'comino'), '½ cdta de comino');
   assert.equal(t(null, 'pizca', 'sal'), 'una pizca de sal');

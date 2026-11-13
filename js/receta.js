@@ -21,6 +21,7 @@ export const UNIDADES = {
   diente: { nombre: 'diente', tipo: 'diente', factor: 1 },
   rodaja: { nombre: 'rodaja', tipo: 'rodaja', factor: 1 },
   loncha: { nombre: 'loncha', tipo: 'loncha', factor: 1 },
+  tira: { nombre: 'tira', tipo: 'tira', factor: 1 },
   lata: { nombre: 'lata', tipo: 'lata', factor: 1 },
   sobre: { nombre: 'sobre', tipo: 'sobre', factor: 1 },
   manojo: { nombre: 'manojo', tipo: 'manojo', factor: 1 },

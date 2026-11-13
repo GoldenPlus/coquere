@@ -20,8 +20,8 @@ export function formatearCantidad(n) {
 }
 
 /** Unidades de recuento que se escriben en plural con más de una: «2 dientes». */
-const CON_PLURAL = new Set(['diente', 'rodaja', 'loncha', 'lata', 'sobre', 'manojo', 'ramita', 'pizca', 'chorro', 'taza', 'vaso']);
-const FEMENINAS = new Set(['rodaja', 'loncha', 'lata', 'ramita', 'pizca', 'taza']);
+const CON_PLURAL = new Set(['diente', 'rodaja', 'loncha', 'tira', 'lata', 'sobre', 'manojo', 'ramita', 'pizca', 'chorro', 'taza', 'vaso']);
+const FEMENINAS = new Set(['rodaja', 'loncha', 'tira', 'lata', 'ramita', 'pizca', 'taza']);
 
 /**
  * Texto de un ingrediente: { cantidad: «750 g de», nombre: «patata», detalle: «nueva» }.
