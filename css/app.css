@@ -168,26 +168,6 @@ dialog h2 { margin: 0 0 0.25rem; font-size: 1.2rem; }
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
 }
 
-/* Dictado por voz: botón 🎤 junto al campo con el foco */
-.boton-voz {
-  position: fixed;
-  z-index: 20;
-  margin: 0;
-  min-width: 2.5rem;
-  height: 2.5rem;
-  padding: 0 0.7em;
-  border-radius: 999px;
-  border: 1px solid var(--borde);
-  background: var(--superficie);
-  color: var(--texto);
-  font-size: 1.05rem;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
-}
-.boton-voz.escuchando { background: var(--error); border-color: var(--error); color: #fff; animation: latir 1.2s ease-in-out infinite; }
-@keyframes latir { 50% { box-shadow: 0 0 0 0.45rem rgb(179 38 30 / 0.25); } }
-@media (prefers-reduced-motion: reduce) { .boton-voz.escuchando { animation: none; } }
-
 /* Diálogo grande (receta): pantalla completa en el móvil */
 dialog.grande { width: min(44rem, calc(100vw - 2rem)); }
 @media (max-width: 40rem) {
